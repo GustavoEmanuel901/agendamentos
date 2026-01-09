@@ -1,0 +1,12 @@
+import "express";
+
+declare module "express-serve-static-core" {
+  interface Request {
+    userId?: string;
+    role?: boolean;
+    permissions: {
+      logs: boolean;
+      appointment: boolean;
+    };
+  }
+}
