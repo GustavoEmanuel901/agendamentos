@@ -6,4 +6,11 @@ export type Appointment = {
   date: string; // ISO string
 };
 
+export type Log = {
+  id: string;
+  descricao: string;
+  modulo: string;
+  data_criacao: string; // ISO string
+};
+
 // Vou ter que criar types para cada tabela ou mandar do backend já pronto?

@@ -8,6 +8,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     return res.status(401).send({ error: "No token provided" });
   }
 
+  console.log(authHeader)
+
   const parts = authHeader.split(" ");
 
   if (!(parts.length === 2)) {

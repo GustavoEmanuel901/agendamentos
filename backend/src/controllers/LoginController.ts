@@ -31,7 +31,7 @@ export default class LoginController {
 
       return res
         .status(200)
-        .cookie("token", token, {
+        .cookie("token", "Bearer " + token, {
           httpOnly: true,
           // secure: process.env.NODE_ENV === "production",
           sameSite: "strict",

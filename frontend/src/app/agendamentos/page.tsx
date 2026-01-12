@@ -3,9 +3,10 @@
 import DashboardScreen from "@/components/DashboardScreen";
 import SidebarComponent from "@/components/SidebarComponent";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Appointment } from "@/types/types";
-import { useState } from "react";
-import { columns } from "@/utils/columns";
+import { Appointment, Log } from "@/types/types";
+import { useState, useEffect } from "react";
+import { columns, logColumns } from "@/utils/columns";
+import api from "@/services/api";
 import {
   Dialog,
   DialogContent,
@@ -34,13 +35,35 @@ const Agendamentos = () => {
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [service, setService] = useState<string>("");
+  const [logs, setLogs] = useState<Log[]>([]);
 
-  const { user } = useUser();
+  const { user,  } = useUser();
   const router = useRouter();
 
+  useEffect(() => {
+    
+    if (!user) {
+      router.push("/");
+      return;
+    }
+
+    const fetchLogs = async () => {
+      try {
+        const response = await api.get<Log[]>("/logs");
+        const  logsData = response.data;
+        setLogs(logsData);
+      } catch (error) {
+        console.error("Erro ao buscar logs:", error);
+      }
+    };
+
+    fetchLogs();
+  }, [user, router]);
+
+  
+
   if (!user) {
-    router.push("/");
-    return;
+    return null;
   }
 
   return (
@@ -128,24 +151,24 @@ const Agendamentos = () => {
             <DashboardScreen
               title="Clientes"
               subtitle="Gerencie seus clientes"
-              data={data}
-              columns={columns}
+              data={[]}
+              columns={[]}
             />
           )}
           {selectedItem === "Logs" && (
             <DashboardScreen
               title="Logs"
               subtitle="Visualize os logs do sistema"
-              data={data}
-              columns={columns}
+              data={logs}
+              columns={logColumns}
             />
           )}
           {selectedItem === "Minha Conta" && (
             <DashboardScreen
               title="Minha Conta"
               subtitle="Gerencie suas informações pessoais"
-              data={data}
-              columns={columns}
+              data={[]}
+              columns={[]}
             />
           )}
         </SidebarInset>
