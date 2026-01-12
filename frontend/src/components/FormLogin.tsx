@@ -104,21 +104,29 @@ const FormLogin = ({
     try {
       const response = await api.post("/login", data);
 
+      console.log("Login bem sucedido:", response.data);
+
       setUser({
         nome: response.data.nome,
         role: response.data.role,
         id: response.data.user_id,
       });
 
-      router.push("/agendamentos");
+      toast.success("Login realizado com sucesso!");
+
+      // Aguarda um pouco antes de redirecionar para garantir que o estado foi atualizado
+      setTimeout(() => {
+        router.push("/agendamentos");
+      }, 100);
       // eslint-disable-next-line
     } catch (err: any) {
-      console.log(err);
+      console.log("Erro no login:", err);
 
-      if (err.status == 500) toast.error("Erro interno do servidor");
-      else toast.error(err.response.data.error);
+      if (err.status == 500) toast.error("Erro no servidor");
+      else if (err.response?.data?.error) toast.error(err.response.data.error);
+      else toast.error("Erro ao fazer login");
 
-      setError(err.mensagem);
+      setError(err.mensagem || "Erro desconhecido");
     }
   };
 

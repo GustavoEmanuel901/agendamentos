@@ -42,10 +42,10 @@ const Agendamentos = () => {
 
   useEffect(() => {
     
-    if (!user) {
-      router.push("/");
-      return;
-    }
+    // if (!user) {
+    //   router.push("/");
+    //   return;
+    // }
 
     const fetchLogs = async () => {
       try {
@@ -58,20 +58,20 @@ const Agendamentos = () => {
     };
 
     fetchLogs();
-  }, [user, router]);
+  }, [router]);
 
   
 
-  if (!user) {
-    return null;
-  }
+  // if (!user) {
+  //   return null;
+  // }
 
   return (
     <SidebarProvider>
       <div className="flex flex-row flex-1 h-screen">
         <SidebarComponent
-          nome={user.nome}
-          tipo={user.role ? "admin" : "cliente"}
+          nome={"Teste"}
+          tipo={"cliente"}
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
         />
