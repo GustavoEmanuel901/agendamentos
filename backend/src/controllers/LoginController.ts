@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generate_token";
+import LogController from "./LogController";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
@@ -27,6 +28,14 @@ export default class LoginController {
           logs: user.dataValues.permissao_logs,
           appointment: user.dataValues.permissao_agendamento,
         },
+      });
+
+      const logController = new LogController();
+
+      logController.create({
+        descricao: `Usuário realizou login.`,
+        modulo: "Minha Conta",
+        user_id: user.dataValues.id,
       });
 
       return res

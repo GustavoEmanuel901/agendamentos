@@ -12,9 +12,8 @@ interface LogCreate {
 export default class LogController {
   async list(req: Request, res: Response) {
     try {
-
-      if(req.permissions.logs) 
-        return res.status(401).send({ error: "Acesso negado" });
+      // if(req.permissions.logs)
+      //   return res.status(401).send({ error: "Acesso negado" });
 
       const {
         pagina = "1",
@@ -22,11 +21,16 @@ export default class LogController {
         pesquisa,
         data,
       } = req.query as Partial<ListarDto>;
+
+      const { id } = req.params;
+
       const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
 
       const where: any = {};
+
+      if (id) where.user_id = id;
 
       if (pesquisa) {
         const like = `%${pesquisa}%`;
@@ -51,6 +55,7 @@ export default class LogController {
         where,
         limit: perPageNum,
         offset,
+        include: ["user"],
         order: [["data_criacao", "DESC"]],
       });
 
@@ -59,6 +64,11 @@ export default class LogController {
         descricao: log.dataValues.descricao,
         modulo: log.dataValues.modulo,
         data_criacao: log.dataValues.data_criacao,
+        user: {
+          id: log.dataValues.user.id,
+          nome: log.dataValues.user.nome,
+          admin: log.dataValues.user.admin ? "admin" : "cliente",
+        },
       }));
 
       return res.json({
@@ -80,7 +90,7 @@ export default class LogController {
     try {
       await Log.create({
         modulo: data.modulo,
-        descricao: data.modulo,
+        descricao: data.descricao,
         user_id: data.user_id,
       });
 

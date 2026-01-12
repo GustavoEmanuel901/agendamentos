@@ -11,8 +11,8 @@ type AppointmentStatus = "agendado" | "em analise" | "cancelado";
 export default class AppointmentControler {
   async create(req: Request, res: Response) {
     try {
-      if (req.permissions.logs)
-        return res.status(401).send({ error: "Acesso negado" });
+      // if (req.permissions.logs)
+      //   return res.status(401).send({ error: "Acesso negado" });
 
       const appointmentCreateSchema = z.object({
         data: z
@@ -29,6 +29,8 @@ export default class AppointmentControler {
           ),
         sala_id: z.number(),
       });
+
+      console.log(req.body);
 
       const payload = appointmentCreateSchema.parse(req.body);
 
@@ -49,7 +51,7 @@ export default class AppointmentControler {
         room_id: payload.sala_id,
         status: "Em análise",
         data_agendamento,
-        user_id: req.userId,
+        user_id: 1, //req.userId,
       });
 
       const logController = new LogController();
@@ -57,7 +59,7 @@ export default class AppointmentControler {
       logController.create({
         descricao: "Criação de Agendamento",
         modulo: "Agendamentos",
-        user_id: Number(req.userId),
+        user_id: 1, // Number(req.userId),
       });
 
       return res
@@ -77,14 +79,17 @@ export default class AppointmentControler {
 
   async list(req: Request, res: Response) {
     try {
-      if (req.permissions.logs)
-        return res.status(401).send({ error: "Acesso negado" });
+      // if (req.permissions.logs)
+      //   return res.status(401).send({ error: "Acesso negado" });
       const {
         pagina = "1",
         limite = "10",
         pesquisa,
         data,
       } = req.query as Partial<ListarDto>;
+
+      const { id } = req.params;
+
       const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
@@ -102,6 +107,10 @@ export default class AppointmentControler {
         }
       }
 
+      if(id ) { 
+        where.user_id = id;
+      }
+
       const include: any[] = [];
       if (pesquisa) {
         const like = `%${pesquisa}%`;
@@ -116,7 +125,21 @@ export default class AppointmentControler {
             ],
           },
         });
+      } else {
+        include.push({
+          model: User,
+          as: "user",
+          attributes: ["id", "nome", "admin"],
+        });
       }
+
+      include.push({
+        model: Room,
+        as: "room",
+        attributes: ["nome"],
+      });
+
+
 
       const { count, rows } = await Appointment.findAndCountAll({
         where,
@@ -135,8 +158,9 @@ export default class AppointmentControler {
           nome: appointment.dataValues.room.nome,
         },
         user: {
+          id: appointment.dataValues.user.id,
           nome: appointment.dataValues.user.nome,
-          admin: appointment.dataValues.user.admin,
+          admin: appointment.dataValues.user.admin ? "admin" : "cliente",
         },
       }));
 
@@ -157,8 +181,8 @@ export default class AppointmentControler {
 
   async update(req: Request, res: Response) {
     try {
-      if (req.permissions.logs)
-        return res.status(401).send({ error: "Acesso negado" });
+      // if (req.permissions.logs)
+      //   return res.status(401).send({ error: "Acesso negado" });
       const { id } = req.params;
 
       const updateSchema = z.object({

@@ -155,6 +155,9 @@ export default class UserController {
 
       const user = await User.findByPk(id);
 
+      if(!user)
+        return res.status(404).json({ message: "Usuário não encontrado" });
+
       return res.json(user);
     } catch {
       return res.status(500).json({ message: "Erro ao recuperar usuário" });
