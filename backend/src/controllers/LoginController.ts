@@ -14,7 +14,7 @@ export default class LoginController {
       });
 
       if (!user) {
-        return res.status(400).send({ error: "Email incorreto" });
+        return res.status(400).send({ error: "Usuário não encontrado" });
       }
 
       if (!(await bcrypt.compare(senha, user.dataValues.senha_hash))) {

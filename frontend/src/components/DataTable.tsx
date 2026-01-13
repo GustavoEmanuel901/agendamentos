@@ -46,6 +46,7 @@ export interface DataTableProps<TData> {
     ordem?: "asc" | "desc";
   }) => void;
   getRowClassName?: (row: TData) => string;
+  onRowSelect?: (row: TData | null) => void;
 }
 
 export function DataTable<TData>({
@@ -57,11 +58,13 @@ export function DataTable<TData>({
   isLoading = false,
   onFilterChange,
   getRowClassName,
+  onRowSelect,
 }: DataTableProps<TData>) {
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [pageIndex, setPageIndex] = useState(currentPage);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedColumns = useMemo<ColumnDef<TData, any>[]>(() => {
@@ -294,7 +297,23 @@ export function DataTable<TData>({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={getRowClassName?.(row.original) ?? ""}
+                  className={`${getRowClassName?.(row.original) ?? ""} ${
+                    selectedRowId === row.id
+                      ? "bg-blue-50 dark:bg-blue-950"
+                      : ""
+                  } ${
+                    onRowSelect
+                      ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    if (onRowSelect) {
+                      const newSelectedId =
+                        selectedRowId === row.id ? null : row.id;
+                      setSelectedRowId(newSelectedId);
+                      onRowSelect(newSelectedId ? row.original : null);
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

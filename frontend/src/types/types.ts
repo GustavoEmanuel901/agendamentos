@@ -5,6 +5,7 @@ export type Appointment = {
   id: string;
   name: string;
   email: string;
+  room: Room;
   status: "agendado" | "Em análise" | "cancelado";
   data_agendamento: string; // ISO string
 };
@@ -78,6 +79,11 @@ export interface DataTableFilters {
   page?: number;
   ordenacao?: string;
   ordem?: "asc" | "desc";
+}
+
+export interface TimeBlocks {
+  id: string;
+  minutos: number;
 }
 
 // Vou ter que criar types para cada tabela ou mandar do backend já pronto?

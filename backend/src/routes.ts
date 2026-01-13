@@ -47,7 +47,7 @@ routes.get("/logs/user/:id", auth, logController.list);
 
 routes.get("/rooms", auth, roomController.list);
 routes.get("/room/:id", auth, admin, roomController.getOne);
-routes.put("/room/:id", auth, admin, roomController.update);
+routes.post("/room/:id", auth, admin, roomController.createOrUpdate);
 
 routes.get("/room/:roomId/timeblocks", auth, timeBlockController.listByRoom);
 

@@ -140,7 +140,6 @@ export default class AppointmentControler {
       include.push({
         model: Room,
         as: "room",
-        attributes: ["nome"],
       });
 
       const { count, rows } = await Appointment.findAndCountAll({
@@ -157,6 +156,7 @@ export default class AppointmentControler {
         status: appointment.dataValues.status,
         data_agendamento: appointment.dataValues.data_agendamento,
         room: {
+          id: appointment.dataValues.room.id,
           nome: appointment.dataValues.room.nome,
         },
         user: {
@@ -193,6 +193,7 @@ export default class AppointmentControler {
 
       const updateSchema = z.object({
         status: z.enum(["agendado", "em análise", "cancelado"]).optional(),
+        sala_id: z.number().optional(),
       });
 
       const payload = updateSchema.parse(req.body);
@@ -201,6 +202,13 @@ export default class AppointmentControler {
 
       if (!appointment)
         return res.status(404).json({ message: "Agendamento não encontrado" });
+
+      if (payload.sala_id) {
+        const room = await Room.findByPk(payload.sala_id);
+
+        if (!room)
+          return res.status(400).json({ message: "Sala não encontrada" });
+      }
 
       await appointment.update(payload);
 

@@ -11,12 +11,10 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import api from "@/services/api";
-import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/userContext";
-import { clear } from "console";
 import { toast } from "sonner";
 
 export interface SidebarItemProps {
@@ -45,7 +43,6 @@ const SidebarComponent: React.FC<SidebarProps> = ({
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
 
-  const router = useRouter();
 
   const { clearUser } = useUser();
 

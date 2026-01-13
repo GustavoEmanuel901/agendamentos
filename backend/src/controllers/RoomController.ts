@@ -41,7 +41,7 @@ export default class RoomController {
     }
   }
 
-  async update(req: Request, res: Response) {
+  async createOrUpdate(req: Request, res: Response) {
     try {
       const { id } = req.params;
 
@@ -50,14 +50,14 @@ export default class RoomController {
         horario_inicio: z
           .string()
           .regex(
-            /^([01]\d|2[0-3]):([0-5]\d)$/,
-            "Horário deve estar no formato HH:MM"
+            /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
+            "Horário deve estar no formato HH:MM:SS"
           ),
         horario_fim: z
           .string()
           .regex(
-            /^([01]\d|2[0-3]):([0-5]\d)$/,
-            "Horário deve estar no formato HH:MM"
+            /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
+            "Horário deve estar no formato HH:MM:SS"
           ),
       });
 
@@ -68,7 +68,30 @@ export default class RoomController {
       if (!room)
         return res.status(404).json({ message: "Sala não encontrada" });
 
-      await room.update(payload);
+      const roomWithSameName = await Room.findOne({
+        where: {
+          nome: payload.nome,
+        },
+      });
+
+      if (!roomWithSameName) {
+        const roomCreated = await Room.create(payload);
+
+        const logController = new LogController();
+
+        await logController.create({
+          descricao: "Sala Criada",
+          modulo: "Salas",
+          user_id: Number(req.userId),
+        });
+
+        return res.json({
+          data: roomCreated,
+          message: "Sala Criada com sucesso",
+        });
+      }
+
+      const roomUpdated = await room.update(payload);
 
       const logController = new LogController();
 
@@ -78,7 +101,10 @@ export default class RoomController {
         user_id: Number(req.userId),
       });
 
-      return res.json({ message: "Sala atualizada com sucesso" });
+      return res.json({
+        data: roomUpdated,
+        message: "Sala atualizada com sucesso",
+      });
     } catch (err: any) {
       if (err instanceof z.ZodError)
         return res

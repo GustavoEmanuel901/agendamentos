@@ -20,6 +20,7 @@ interface DashboardScreenProps<TData> {
     page?: number;
   }) => void;
   getRowClassName?: (row: TData) => string;
+  onRowSelect?: (row: TData | null) => void;
 }
 
 export default function DashboardScreen<TData>({
@@ -33,6 +34,7 @@ export default function DashboardScreen<TData>({
   isLoading,
   onFilterChange,
   getRowClassName,
+  onRowSelect,
 }: DashboardScreenProps<TData>) {
   // Temporario
   return (
@@ -47,6 +49,7 @@ export default function DashboardScreen<TData>({
           isLoading={isLoading}
           onFilterChange={onFilterChange}
           getRowClassName={getRowClassName}
+          onRowSelect={onRowSelect}
         >
           {children}
         </DataTable>

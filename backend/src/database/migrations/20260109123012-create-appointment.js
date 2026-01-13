@@ -23,14 +23,14 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: "CASCADE",
       onDelete: "CASCADE",
     },
-    room_id: {  
+    room_id: {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
         model: "rooms",
         key: "id",
       },
-      onUpdate: "CASCADE",
+      onUpdate: "NO ACTION",
       onDelete: "CASCADE",
     },
     data_criacao: {
