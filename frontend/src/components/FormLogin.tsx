@@ -112,12 +112,10 @@ const FormLogin = ({
         id: response.data.user_id,
       });
 
-      toast.success("Login realizado com sucesso!");
+      //toast.success("Login realizado com sucesso!");
+      
+      router.replace("/agendamentos");
 
-      // Aguarda um pouco antes de redirecionar para garantir que o estado foi atualizado
-      setTimeout(() => {
-        router.push("/agendamentos");
-      }, 100);
       // eslint-disable-next-line
     } catch (err: any) {
       console.log("Erro no login:", err);

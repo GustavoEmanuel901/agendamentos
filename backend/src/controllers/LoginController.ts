@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generate_token";
+import LogController from "./LogController";
+import { iso } from "zod";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
@@ -29,12 +31,22 @@ export default class LoginController {
         },
       });
 
+      const logController = new LogController();
+
+      logController.create({
+        descricao: `Usuário realizou login.`,
+        modulo: "Minha Conta",
+        user_id: user.dataValues.id,
+      });
+
+      const isProd = process.env.NODE_ENV === "production";
+
       return res
         .status(200)
         .cookie("token", "Bearer " + token, {
           httpOnly: true,
-          // secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
+          secure: isProd,
+          sameSite: isProd ? "none" : "lax",
           maxAge: 1000 * 60 * 60 * 24, // 1 dia
         })
         .status(200)

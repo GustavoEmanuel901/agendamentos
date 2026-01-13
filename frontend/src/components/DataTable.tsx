@@ -1,12 +1,12 @@
 // components/DataTable/data-table.tsx
+
+// components/DataTable/data-table.tsx
 "use client";
 
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -27,68 +27,194 @@ import { Input } from "./ui/input";
 import { Popover, PopoverContent } from "./ui/popover";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Calendar } from "./ui/calendar";
+import { useState, useCallback, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import type { Columns as ColumnWithType } from "@/types/types";
 
 export interface DataTableProps<TData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  columns: ColumnDef<TData, any>[];
+  columns: ColumnWithType<TData>[];
   data: TData[];
   children?: React.ReactNode;
+  totalPages?: number;
+  currentPage?: number;
+  isLoading?: boolean;
+  onFilterChange?: (filters: {
+    pesquisa?: string;
+    data?: string;
+    page?: number;
+  }) => void;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function DataTable<TData>({
   columns,
   data,
   children,
+  totalPages = 1,
+  currentPage = 0,
+  isLoading = false,
+  onFilterChange,
+  getRowClassName,
 }: DataTableProps<TData>) {
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [pageIndex, setPageIndex] = useState(currentPage);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normalizedColumns = useMemo<ColumnDef<TData, any>[]>(() => {
+    return columns.map((col) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (col.cell) return col as ColumnDef<TData, any>;
+      if (col.type === "badge") {
+        return {
+          ...col,
+          cell: ({ getValue }) => (
+            <Badge variant={col.variant ?? "secondary"}>
+              {String(getValue() ?? "")}
+            </Badge>
+          ),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as ColumnDef<TData, any>;
+      }
+
+      if (col.type === "action") {
+      }
+
+      if (col.type === "conjunto") {
+        return {
+          ...col,
+          cell: ({ getValue }) => {
+            const v = getValue() as unknown as
+              | Record<string, unknown>
+              | null
+              | undefined;
+            if (!v || typeof v !== "object") {
+              return <span>{String(v ?? "")}</span>;
+            }
+            const values = Object.values(v);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const top =
+              (v as any).top ??
+              (v as any).primary ??
+              (v as any).label ??
+              values[1] ??
+              "";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const bottom =
+              (v as any).bottom ??
+              (v as any).secondary ??
+              (v as any).subLabel ??
+              values[2] ??
+              "";
+            return (
+              <div className="flex flex-col">
+                <span className="font-medium leading-tight">
+                  {String(top ?? "")}
+                </span>
+                <span className="text-muted-foreground text-xs leading-tight">
+                  {String(bottom ?? "")}
+                </span>
+              </div>
+            );
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as ColumnDef<TData, any>;
+      }
+
+      return {
+        ...col,
+        cell: ({ getValue }) => <span>{String(getValue() ?? "")}</span>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as ColumnDef<TData, any>;
+    });
+  }, [columns]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: normalizedColumns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
+    state: {
+      pagination: { pageIndex, pageSize: 10 },
+    },
   });
-  const dateColumn = table.getColumn("date");
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchValue(value);
+      onFilterChange?.({
+        pesquisa: value,
+        data: selectedDate?.toISOString(),
+        page: 0,
+      });
+      setPageIndex(0);
+    },
+    [selectedDate, onFilterChange]
+  );
+
+  const handleDateChange = useCallback(
+    (date: Date | undefined) => {
+      setSelectedDate(date);
+      onFilterChange?.({
+        pesquisa: searchValue,
+        data: date?.toISOString(),
+        page: 0,
+      });
+      setPageIndex(0);
+    },
+    [searchValue, onFilterChange]
+  );
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPageIndex(newPage);
+      onFilterChange?.({
+        pesquisa: searchValue,
+        data: selectedDate?.toISOString(),
+        page: newPage,
+      });
+    },
+    [searchValue, selectedDate, onFilterChange]
+  );
 
   return (
     <>
       <div className="border rounded-md bg-white mt-10 mx-10 p-6 h-full">
         <div className="flex flex-wrap items-center">
           {/* 🔍 Search */}
-
           <div className="relative ">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Filtrar por nome"
               className="pl-9 w-100"
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(e) =>
-                table.getColumn("name")?.setFilterValue(e.target.value)
-              }
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              disabled={isLoading}
             />
           </div>
 
           {/* 📅 Filtro por data */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" className="gap-2 border ml-4 w-30">
+              <Button
+                variant="ghost"
+                className="gap-2 border ml-4 w-30"
+                disabled={isLoading}
+              >
                 <CalendarIcon className="h-4 w-4" />
-                Selecione
+                {selectedDate
+                  ? selectedDate.toLocaleDateString("pt-BR")
+                  : "Selecione"}
               </Button>
             </PopoverTrigger>
 
             <PopoverContent align="start" className="p-0 ">
               <Calendar
                 mode="single"
-                selected={
-                  dateColumn?.getFilterValue()
-                    ? new Date(dateColumn.getFilterValue() as string)
-                    : undefined
-                }
-                onSelect={(date) =>
-                  dateColumn?.setFilterValue(date?.toISOString())
-                }
+                selected={selectedDate}
+                onSelect={handleDateChange}
               />
             </PopoverContent>
           </Popover>
@@ -96,7 +222,11 @@ export function DataTable<TData>({
           {/* ➕ Botão */}
           <div className="ml-auto gap-2">{children}</div>
         </div>
-        {table.getRowModel().rows.length ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        ) : table.getRowModel().rows.length ? (
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((group) => (
@@ -115,7 +245,10 @@ export function DataTable<TData>({
 
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className={getRowClassName?.(row.original) ?? ""}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -142,15 +275,15 @@ export function DataTable<TData>({
           variant="default"
           size="icon"
           className="h-8 w-8 rounded-md border"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
+          onClick={() => handlePageChange(pageIndex - 1)}
+          disabled={pageIndex === 0 || isLoading}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
         {/* Página atual */}
         <span className="flex h-8 min-w-8 items-center justify-center rounded-md bg-black px-3 text-sm font-medium text-white">
-          {table.getState().pagination.pageIndex + 1}
+          {pageIndex + 1} / {totalPages}
         </span>
 
         {/* Próxima */}
@@ -158,8 +291,8 @@ export function DataTable<TData>({
           variant="default"
           size="icon"
           className="h-8 w-8 rounded-md border"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
+          onClick={() => handlePageChange(pageIndex + 1)}
+          disabled={pageIndex >= totalPages - 1 || isLoading}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

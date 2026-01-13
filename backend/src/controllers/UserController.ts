@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Op } from "sequelize";
 import LogController from "./LogController";
 import generateToken from "../utils/generate_token";
+import admin from "../middlewares/admin";
 
 export default class UserController {
   async createUser(req: Request, res: Response) {
@@ -78,6 +79,28 @@ export default class UserController {
       }
       console.error("Erro ao criar usuário:", error);
       return res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  }
+
+  async getProfile(req: Request, res: Response) {
+    try {
+      const id = req.userId;
+
+      const user = await User.findByPk(id);
+
+      if(!user)
+        return res.status(404).json({ message: "Usuário não encontrado" });
+
+
+
+      return res.json({
+        id: user.dataValues.id,
+        nome: user.dataValues.nome,
+        sobrenome: user.dataValues.sobrenome,
+        admin: user.dataValues.admin ? 'admin' : 'cliente',
+      });
+    } catch {
+      return res.status(500).json({ message: "Erro ao recuperar usuário" });
     }
   }
 
@@ -154,6 +177,9 @@ export default class UserController {
       const { id } = req.params;
 
       const user = await User.findByPk(id);
+
+      if(!user)
+        return res.status(404).json({ message: "Usuário não encontrado" });
 
       return res.json(user);
     } catch {
