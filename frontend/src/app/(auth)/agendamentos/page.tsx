@@ -45,7 +45,13 @@ import HeaderTable from "@/components/HeaderTable";
 import { items } from "@/utils/sidebarItems";
 import DialogFormWrapper from "@/components/DialogFormWrapper";
 import { RoomFormData, roomSchema } from "@/schemas/room.schema";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -68,6 +74,7 @@ const Agendamentos = () => {
   const [roomSearchEdit, setRoomSearchEdit] = useState("");
   const [timeRange, setTimeRange] = useState({ inicio: "", fim: "" });
   const [timeBlocks, setTimeBlocks] = useState<TimeBlocks[]>([]);
+  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<number[]>([]);
   //const [selectedStatus, setSelectedStatus] = useState("");
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
@@ -217,6 +224,10 @@ const Agendamentos = () => {
     try {
       const response = await api.get(`/room/${roomId}/timeblocks`);
       setTimeBlocks(response.data);
+      // Pré-selecionar todos os blocos ao carregar
+      setSelectedTimeBlocks(
+        response.data.map((_: TimeBlocks, index: number) => index)
+      );
     } catch (error) {
       console.error("Erro ao buscar opções de status:", error);
     } finally {
@@ -339,7 +350,7 @@ const Agendamentos = () => {
       });
 
       await api.put(`/appointments/${selectedAppointment.id}`, {
-        sala_id: newRoom.data.id
+        sala_id: newRoom.data.id,
       });
 
       resetEdit();
@@ -360,6 +371,16 @@ const Agendamentos = () => {
     resetEdit();
     setRoomSearchEdit("");
     setTimeRange({ inicio: "", fim: "" });
+  };
+
+  // Alternar seleção de time blocks
+  const toggleTimeBlockSelection = (index: number) => {
+    setSelectedTimeBlocks((prev) => {
+      if (prev.includes(index)) {
+        return prev.filter((i) => i !== index);
+      }
+      return [...prev, index];
+    });
   };
 
   const verifyPermissionLog = () => {
@@ -395,6 +416,7 @@ const Agendamentos = () => {
     if (selectedAppointment) {
       setRoomSearchEdit("");
       setTimeRange({ inicio: "", fim: "" });
+      setSelectedTimeBlocks([]);
       console.log("Selected appointment changed:", selectedAppointment);
 
       // Buscar detalhes do agendamento da API
@@ -571,41 +593,59 @@ const Agendamentos = () => {
                         </div>
                         <div className="grid gap-3">
                           <Label>Bloco de horários de agendamentos</Label>
-                          <Select
-                            value=""
-                            onValueChange={() => {}}
-                            disabled={loadingTimeBlocks}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue
-                                placeholder={
-                                  loadingTimeBlocks
-                                    ? "Carregando..."
-                                    : "Veja os blocos de horários"
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {loadingTimeBlocks ? (
-                                <SelectItem value="loading" disabled>
-                                  Carregando...
-                                </SelectItem>
-                              ) : timeBlocks.length ? (
-                                timeBlocks.map((status, index) => (
-                                  <SelectItem
-                                    key={index}
-                                    value={status.minutos.toString()}
-                                  >
-                                    {status.minutos} minutos
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="empty" disabled>
-                                  Nenhum status disponível
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                                disabled={loadingTimeBlocks}
+                              >
+                                {loadingTimeBlocks
+                                  ? "Carregando..."
+                                  : `${selectedTimeBlocks.length} de ${timeBlocks.length} blocos selecionados`}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-full p-0"
+                              align="start"
+                            >
+                              <div className="max-h-64 overflow-y-auto">
+                                {loadingTimeBlocks ? (
+                                  <div className="px-2 py-2 text-sm text-muted-foreground">
+                                    Carregando...
+                                  </div>
+                                ) : timeBlocks.length ? (
+                                  timeBlocks.map((status, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
+                                      onClick={() =>
+                                        toggleTimeBlockSelection(index)
+                                      }
+                                    >
+                                      <Checkbox
+                                        checked={selectedTimeBlocks.includes(
+                                          index
+                                        )}
+                                        onCheckedChange={() =>
+                                          toggleTimeBlockSelection(index)
+                                        }
+                                      />
+                                      <span className="flex-1 text-sm">
+                                        {status.minutos} minutos
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="px-2 py-2 text-sm text-muted-foreground">
+                                    Nenhum status disponível
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <div className="flex justify-start">
                           <Button
