@@ -51,7 +51,7 @@ export default class AppointmentControler {
         room_id: payload.sala_id,
         status: "Em análise",
         data_agendamento,
-        user_id: 1, //req.userId,
+        user_id: req.userId,
       });
 
       const logController = new LogController();
@@ -59,7 +59,7 @@ export default class AppointmentControler {
       logController.create({
         descricao: "Criação de Agendamento",
         modulo: "Agendamentos",
-        user_id: 1, // Number(req.userId),
+        user_id: Number(req.userId),
       });
 
       return res
@@ -89,9 +89,11 @@ export default class AppointmentControler {
         limite = "10",
         pesquisa,
         data,
+        ordenacao,
+        ordem,
       } = req.query as Partial<ListarDto>;
 
-      const { id } = req.params;
+      const userId = req.userId;
 
       const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
@@ -110,8 +112,8 @@ export default class AppointmentControler {
         }
       }
 
-      if (id) {
-        where.user_id = id;
+      if (userId && !req.role) {
+        where.user_id = userId;
       }
 
       const include: any[] = [];
@@ -132,7 +134,6 @@ export default class AppointmentControler {
         include.push({
           model: User,
           as: "user",
-          attributes: ["id", "nome", "admin"],
         });
       }
 
@@ -147,7 +148,7 @@ export default class AppointmentControler {
         include,
         limit: perPageNum,
         offset,
-        order: [["data_agendamento", "DESC"]],
+        order: [[ordenacao || "data_agendamento", ordem || "DESC"]],
         distinct: true,
       });
 
@@ -160,7 +161,10 @@ export default class AppointmentControler {
         },
         user: {
           id: appointment.dataValues.user.id,
-          nome: appointment.dataValues.user.nome,
+          nome:
+            appointment.dataValues.user.nome +
+            " " +
+            appointment.dataValues.user.sobrenome,
           admin: appointment.dataValues.user.admin ? "admin" : "cliente",
         },
       }));

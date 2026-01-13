@@ -5,7 +5,7 @@ export type Appointment = {
   id: string;
   name: string;
   email: string;
-  status: "agendado" | "en análise" | "cancelado";
+  status: "agendado" | "Em análise" | "cancelado";
   data_agendamento: string; // ISO string
 };
 
@@ -21,7 +21,25 @@ export type Room = {
   nome: string;
 };
 
+export type Client = {
+  permissoes: {
+    agendamentos: boolean;
+    logs: boolean;
+  };
+  user: {
+    id: string;
+    nome: string;
+    tipo: "admin" | "cliente";
+  };
+  nome: string;
+  endereco: string;
+  data_criacao: string; // ISO string
+  status: boolean;
+};
+
 export type Columns<T> = ColumnDef<T> & {
+  accessorKey?: string;
+  header: string;
   type: "normal" | "conjunto" | "badge" | "action";
   variant?:
     | "secondary"
@@ -30,6 +48,8 @@ export type Columns<T> = ColumnDef<T> & {
     | "outline"
     | null
     | undefined;
+
+  isOrderable?: boolean;
 };
 
 export type ApiResponse<T> = {
@@ -50,6 +70,14 @@ export interface ViaCEPResponse {
   localidade: string;
   estado: string;
   erro?: boolean;
+}
+
+export interface DataTableFilters {
+  pesquisa?: string;
+  data?: string;
+  page?: number;
+  ordenacao?: string;
+  ordem?: "asc" | "desc";
 }
 
 // Vou ter que criar types para cada tabela ou mandar do backend já pronto?

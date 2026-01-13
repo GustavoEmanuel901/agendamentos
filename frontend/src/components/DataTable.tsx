@@ -29,11 +29,10 @@ import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Calendar } from "./ui/calendar";
 import { useState, useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { Columns as ColumnWithType } from "@/types/types";
+import type { Columns, Columns as ColumnWithType } from "@/types/types";
 
 export interface DataTableProps<TData> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  columns: ColumnWithType<TData>[];
+  columns: Columns<TData>[];
   data: TData[];
   children?: React.ReactNode;
   totalPages?: number;
@@ -43,6 +42,8 @@ export interface DataTableProps<TData> {
     pesquisa?: string;
     data?: string;
     page?: number;
+    ordenacao?: string;
+    ordem?: "asc" | "desc";
   }) => void;
   getRowClassName?: (row: TData) => string;
 }
@@ -60,6 +61,7 @@ export function DataTable<TData>({
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [pageIndex, setPageIndex] = useState(currentPage);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedColumns = useMemo<ColumnDef<TData, any>[]>(() => {
@@ -169,15 +171,37 @@ export function DataTable<TData>({
 
   const handlePageChange = useCallback(
     (newPage: number) => {
+      const ordeblaColumn = columns.find((col) => col.isOrderable && sortOrder);
+
       setPageIndex(newPage);
       onFilterChange?.({
         pesquisa: searchValue,
         data: selectedDate?.toISOString(),
         page: newPage,
+        ordenacao: sortOrder ? ordeblaColumn?.accessorKey : undefined,
+        ordem: sortOrder ?? undefined,
       });
     },
-    [searchValue, selectedDate, onFilterChange]
+    [searchValue, selectedDate, sortOrder, onFilterChange, columns]
   );
+
+  const handleSortChange = useCallback(() => {
+    const newOrder =
+      sortOrder === "asc" ? "desc" : sortOrder === "desc" ? null : "asc";
+
+    const ordeblaColumn = columns.find((col) => col.isOrderable && sortOrder);
+
+    setSortOrder(newOrder);
+    setPageIndex(0);
+    onFilterChange?.({
+      pesquisa: searchValue,
+      data: selectedDate?.toISOString(),
+      page: 0,
+      ordenacao: sortOrder ? ordeblaColumn?.accessorKey : undefined,
+
+      ordem: newOrder ?? undefined,
+    });
+  }, [sortOrder, searchValue, selectedDate, onFilterChange, columns]);
 
   return (
     <>
@@ -231,14 +255,37 @@ export function DataTable<TData>({
             <TableHeader>
               {table.getHeaderGroups().map((group) => (
                 <TableRow key={group.id}>
-                  {group.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </TableHead>
-                  ))}
+                  {group.headers.map((header) => {
+                    const columnDef = header.column
+                      .columnDef as ColumnWithType<TData>;
+
+                    return (
+                      <TableHead key={header.id}>
+                        {columnDef.isOrderable ? (
+                          <button
+                            onClick={handleSortChange}
+                            className="flex items-center gap-2 hover:text-foreground transition-colors"
+                            disabled={isLoading}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {sortOrder && (
+                              <span className="text-xs">
+                                {sortOrder === "asc" ? "↑" : "↓"}
+                              </span>
+                            )}
+                          </button>
+                        ) : (
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )
+                        )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHeader>

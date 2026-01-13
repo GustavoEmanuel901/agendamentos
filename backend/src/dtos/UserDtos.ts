@@ -16,4 +16,6 @@ export interface ListarDto {
   limite: string;
   pesquisa: string;
   data: string;
+  ordem: string;
+  ordenacao: "desc" | "asc";
 }

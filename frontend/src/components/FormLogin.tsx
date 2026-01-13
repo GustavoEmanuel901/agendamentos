@@ -106,6 +106,8 @@ const FormLogin = ({
 
       console.log("Login bem sucedido:", response.data);
 
+      console.log(response.data);
+
       setUser({
         nome: response.data.nome,
         role: response.data.role,

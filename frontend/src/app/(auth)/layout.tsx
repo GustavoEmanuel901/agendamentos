@@ -12,9 +12,13 @@ export default async function Layout({
 
   const hasToken = cookiesList.has("token");
 
+  console.log("Has token:", hasToken);
+
   if (!hasToken) return redirect("/");
 
   const token = cookiesList.get("token")?.value;
+
+  const admin = cookiesList.get("admin")?.value;
 
   const requestUser = await api
     .get("/profile", {
@@ -34,7 +38,13 @@ export default async function Layout({
       return { status: err.response?.status || 500, data: null };
     });
 
-  if (requestUser.status !== 200) redirect("/");
+  if (requestUser.status !== 200) {
+    if (admin) {
+      return redirect("/admin");
+    } else {
+      return redirect("/");
+    }
+  }
 
   return (
     <UserDataProvider userData={requestUser.data}>{children}</UserDataProvider>

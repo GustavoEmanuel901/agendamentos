@@ -21,6 +21,7 @@ const roomController = new RoomController();
 const timeBlockController = new TimeBlockController();
 
 routes.post("/login", loginController.login);
+routes.get("/logout", auth, loginController.logout);
 
 routes.post("/user", userController.createUser);
 routes.get("/users/clients", auth, admin, userController.getClients);

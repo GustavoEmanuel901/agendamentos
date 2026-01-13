@@ -33,7 +33,7 @@ class User extends Model {
         },
         permissao_logs: {
           type: DataTypes.BOOLEAN,
-          defaultValue: false,
+          defaultValue: true,
         },
         permissao_agendamento: {
           type: DataTypes.BOOLEAN,

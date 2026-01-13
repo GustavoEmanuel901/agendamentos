@@ -11,14 +11,13 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
-import React, { useState } from "react";
-import {
-  CalendarRange,
-  ChevronDown,
-  ListCheck,
-  User,
-  Users,
-} from "lucide-react";
+import React, { use, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import api from "@/services/api";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/userContext";
+import { clear } from "console";
+import { toast } from "sonner";
 
 export interface SidebarItemProps {
   title: string;
@@ -46,6 +45,24 @@ const SidebarComponent: React.FC<SidebarProps> = ({
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
 
+  const router = useRouter();
+
+  const { clearUser } = useUser();
+
+  const logout = async () => {
+    // Implement logout functionality here
+
+    try {
+      await api.get("/logout");
+
+      clearUser();
+
+      // router.replace("/");
+    } catch (error) {
+      toast.error("Erro ao fazer logout." + error);
+    }
+  };
+
   React.useEffect(() => {
     if (selectedItem !== undefined) {
       setSelected(selectedItem);
@@ -63,7 +80,9 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         <SidebarMenu className="p-4">
           {items
             .filter((item) => item.tipo === "global" || item.tipo === tipo)
-            .filter((item) => item.verifyPermission ? item.verifyPermission() : true)
+            .filter((item) =>
+              item.verifyPermission ? item.verifyPermission() : true
+            )
             .map((item) => {
               const isSelected = selected === item.title;
               return (
@@ -101,7 +120,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         </div>
 
         <div>
-          <button>
+          <button onClick={logout}>
             <ChevronDown size={20} color="#919191ff" />
           </button>
         </div>

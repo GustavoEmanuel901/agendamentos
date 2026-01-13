@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token");
+  const admin = req.cookies.get("admin");
+
   const pathname = req.nextUrl.pathname;
 
   // Rotas privadas que exigem autenticação
@@ -9,7 +11,9 @@ export function middleware(req: NextRequest) {
 
   // Se for rota privada e não tiver token, redireciona para login
   if (isPrivateRoute && !token) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return admin
+      ? NextResponse.redirect(new URL("/admin", req.url))
+      : NextResponse.redirect(new URL("/", req.url));
   }
 
   // Se for rota pública (login/cadastro) e tiver token, redireciona para agendamentos

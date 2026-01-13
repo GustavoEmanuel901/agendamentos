@@ -5,9 +5,20 @@ import SidebarComponent, {
   SidebarItemProps,
 } from "@/components/SidebarComponent";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { ApiResponse, Appointment, Log, Room } from "@/types/types";
+import {
+  ApiResponse,
+  Appointment,
+  Log,
+  Room,
+  Client,
+  DataTableFilters,
+} from "@/types/types";
 import { useState, useEffect, useMemo } from "react";
-import { getAppointmentColumns, logColumns } from "@/utils/columns";
+import {
+  getAppointmentColumns,
+  getClientColumns,
+  logColumns,
+} from "@/utils/columns";
 import api from "@/services/api";
 import { Form, useForm } from "react-hook-form";
 import { Controller } from "react-hook-form";
@@ -48,6 +59,7 @@ const Agendamentos = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
@@ -61,10 +73,23 @@ const Agendamentos = () => {
   const { user } = useUser();
   const router = useRouter();
 
-  const columns = useMemo(
+  const columnsAppointment = useMemo(
     () =>
       getAppointmentColumns(() =>
         fetchAppointments({
+          pesquisa: filters.pesquisa,
+          data: filters.data,
+          page: pagination.page + 1,
+        }),
+        user?.role
+      ),
+    [filters, pagination.page, user?.role]
+  );
+
+  const columnsClients = useMemo(
+    () =>
+      getClientColumns(() =>
+        fetchClients({
           pesquisa: filters.pesquisa,
           data: filters.data,
           page: pagination.page + 1,
@@ -89,16 +114,15 @@ const Agendamentos = () => {
   });
 
   // Buscar agendamentos com filtros
-  const fetchAppointments = async (newFilters?: {
-    pesquisa?: string;
-    data?: string;
-    page?: number;
-  }) => {
+  const fetchAppointments = async (newFilters?: DataTableFilters) => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
       if (newFilters?.data) params.append("data", newFilters.data);
+      if (newFilters?.ordenacao)
+        params.append("ordenacao", newFilters.ordenacao);
+      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
       params.append("page", String(newFilters?.page ?? 1));
       params.append("limit", "10");
 
@@ -121,11 +145,7 @@ const Agendamentos = () => {
   };
 
   // Buscar logs com filtros
-  const fetchLogs = async (newFilters?: {
-    pesquisa?: string;
-    data?: string;
-    page?: number;
-  }) => {
+  const fetchLogs = async (newFilters?: DataTableFilters) => {
     setIsLoading(true);
     try {
       console.log("Fetching logs with filters:", newFilters);
@@ -133,6 +153,9 @@ const Agendamentos = () => {
       const params = new URLSearchParams();
       if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
       if (newFilters?.data) params.append("data", newFilters.data);
+      if (newFilters?.ordenacao)
+        params.append("ordenacao", newFilters.ordenacao);
+      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
       params.append("pagina", String(newFilters?.page ?? 1));
       params.append("limite", "10");
 
@@ -167,6 +190,37 @@ const Agendamentos = () => {
       console.error("Erro ao buscar serviços:", e);
     } finally {
       setRoomsLoading(false);
+    }
+  };
+
+  // Buscar clientes com filtros
+  const fetchClients = async (newFilters?: DataTableFilters) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
+      if (newFilters?.data) params.append("data", newFilters.data);
+      if (newFilters?.ordenacao)
+        params.append("ordenacao", newFilters.ordenacao);
+      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
+      params.append("page", String(newFilters?.page ?? 1));
+      params.append("limit", "10");
+
+      const response = await api.get<ApiResponse<Client>>(
+        `/users/clients?${params.toString()}`
+      );
+
+      console.log("Clientes carregados:", response.data);
+
+      setClients(response.data.data);
+      setPagination({
+        page: response.data.meta.page - 1,
+        totalPages: response.data.meta.total_pages,
+      });
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -223,20 +277,24 @@ const Agendamentos = () => {
       fetchRooms();
     } else if (selectedItem === "Logs") {
       fetchLogs();
+    } else if (selectedItem === "Clientes" && user?.role) {
+      fetchClients();
     }
+
+    console.log(user);
   }, [user, router, selectedItem]);
 
-  // if (!user) {
-  //   return null;
-  // }
+  if (!user) {
+    return null;
+  }
 
   return (
     <SidebarProvider>
       <div className="flex flex-row flex-1 h-screen">
         <SidebarComponent
           items={sidebarItems}
-          nome={user?.nome || "Usuário"}
-          tipo={user?.role ? "admin" : "cliente"}
+          nome={user.nome || "Usuário"}
+          tipo={user.role ? "admin" : "cliente"}
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
         />
@@ -246,7 +304,7 @@ const Agendamentos = () => {
               title="Agendamentos"
               subtitle="Gerencie seus agendamentos"
               data={appointments}
-              columns={columns}
+              columns={columnsAppointment}
               showActionButton={true}
               isLoading={isLoading}
               currentPage={pagination.page}
@@ -373,8 +431,19 @@ const Agendamentos = () => {
             <DashboardScreen
               title="Clientes"
               subtitle="Gerencie seus clientes"
-              data={[]}
-              columns={[]}
+              data={clients}
+              columns={columnsClients}
+              isLoading={isLoading}
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onFilterChange={(newFilters) => {
+                setFilters({
+                  pesquisa: newFilters.pesquisa ?? "",
+                  data: newFilters.data ?? "",
+                });
+
+                fetchClients(newFilters);
+              }}
             />
           )}
           {selectedItem === "Logs" && (

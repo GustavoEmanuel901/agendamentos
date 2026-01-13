@@ -60,12 +60,20 @@ export default class UserController {
         },
       });
 
+      const isProd = process.env.NODE_ENV === "production";
+
       return res
         .status(201)
         .cookie("token", token, {
           httpOnly: true,
-          // secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
+          maxAge: 1000 * 60 * 60 * 24, // 1 dia
+        })
+        .cookie("admin", user.dataValues.admin, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: isProd ? "none" : "lax",
           maxAge: 1000 * 60 * 60 * 24, // 1 dia
         })
         .json({
@@ -109,7 +117,7 @@ export default class UserController {
           logs: user.dataValues.permissao_logs,
           appointment: user.dataValues.permissao_agendamento,
         },
-        admin: user.dataValues.admin ? "admin" : "cliente",
+        role: user.dataValues.admin,
       });
     } catch {
       return res.status(500).json({ message: "Erro ao recuperar usuário" });
@@ -123,6 +131,8 @@ export default class UserController {
         limite = "10",
         pesquisa,
         data,
+        ordem,
+        ordenacao,
       } = req.query as Partial<ListarDto>;
       const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
@@ -153,20 +163,23 @@ export default class UserController {
         where,
         limit: perPageNum,
         offset,
-        order: [["data_criacao", "DESC"]],
+        order: [[ordenacao || "data_criacao", ordem || "DESC"]],
       });
 
       const clients = rows.map((user) => ({
-        id: user.dataValues.id,
-        permissoes: {
-          pode_agendamentos: user.dataValues.permissao_agendamento,
-          pode_logs: user.dataValues.permissao_logs,
+        user: {
+          id: user.dataValues.id,
+
+          nome: `${user.dataValues.nome} ${user.dataValues.sobrenome}`,
+          tipo: user.dataValues.admin ? "admin" : "cliente",
         },
-        tipo: user.dataValues.admin ? "admin" : "cliente",
-        data_cadastro: user.dataValues.data_criacao,
+        permissoes: {
+          agendamentos: user.dataValues.permissao_agendamento,
+          logs: user.dataValues.permissao_logs,
+        },
+        data_criacao: user.dataValues.data_criacao,
         endereco: `${user.dataValues.endereco}, ${user.dataValues.numero} - ${user.dataValues.complemento} - ${user.dataValues.bairro} - ${user.dataValues.cidade}/${user.dataValues.estado}`,
         status: user.dataValues.status,
-        nome: `${user.dataValues.nome} ${user.dataValues.sobrenome}`,
       }));
 
       return res.json({

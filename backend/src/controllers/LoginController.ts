@@ -10,7 +10,7 @@ export default class LoginController {
 
     try {
       const user = await User.findOne({
-        where: { email },
+        where: { email, status: true },
       });
 
       if (!user) {
@@ -48,6 +48,12 @@ export default class LoginController {
           sameSite: isProd ? "none" : "lax",
           maxAge: 1000 * 60 * 60 * 24, // 1 dia
         })
+        .cookie("admin", user.dataValues.admin, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: isProd ? "none" : "lax",
+          maxAge: 1000 * 60 * 60 * 24, // 1 dia
+        })
         .status(200)
         .json({
           user_id: user.dataValues.id,
@@ -61,6 +67,31 @@ export default class LoginController {
         });
     } catch (error) {
       return res.status(400).send({ error: "Login failed, try again" });
+    }
+  }
+
+  async logout(req: Request, res: Response) {
+    try {
+      const logController = new LogController();
+
+      logController.create({
+        descricao: `Usuário realizou logout.`,
+        modulo: "Minha Conta",
+        user_id: Number(req.userId),
+      });
+
+      const isProd = process.env.NODE_ENV === "production";
+
+      return res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: isProd ? "none" : "lax",
+        })
+        .status(200)
+        .json({ message: "Logout realizado com sucesso" });
+    } catch (error) {
+      return res.status(400).send({ error: "Logout failed" });
     }
   }
 }

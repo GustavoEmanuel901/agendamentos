@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Op } from "sequelize";
 import Log from "../models/Log";
 import { ListarDto } from "../dtos/UserDtos";
+import User from "../models/User";
 
 interface LogCreate {
   descricao: string;
@@ -20,9 +21,11 @@ export default class LogController {
         limite = "10",
         pesquisa,
         data,
+        ordem,
+        ordenacao,
       } = req.query as Partial<ListarDto>;
 
-      const { id } = req.params;
+      const userId = req.userId;
 
       const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
@@ -30,13 +33,16 @@ export default class LogController {
 
       const where: any = {};
 
-      if (id) where.user_id = id;
+      if (userId && !req.role) where.user_id = userId;
 
       if (pesquisa) {
         const like = `%${pesquisa}%`;
+
         where[Op.or] = [
           { descricao: { [Op.like]: like } },
           { modulo: { [Op.like]: like } },
+          { "$user.nome$": { [Op.like]: like } },
+          { "$user.sobrenome$": { [Op.like]: like } },
         ];
       }
 
@@ -55,8 +61,8 @@ export default class LogController {
         where,
         limit: perPageNum,
         offset,
-        include: ["user"],
-        order: [["data_criacao", "DESC"]],
+        include: [{ model: User, as: "user" }],
+        order: [[ordenacao || "data_criacao", ordem || "DESC"]],
       });
 
       const logs = rows.map((log) => ({
@@ -66,7 +72,7 @@ export default class LogController {
         data_criacao: log.dataValues.data_criacao,
         user: {
           id: log.dataValues.user.id,
-          nome: log.dataValues.user.nome,
+          nome: log.dataValues.user.nome + " " + log.dataValues.user.sobrenome,
           admin: log.dataValues.user.admin ? "admin" : "cliente",
         },
       }));
