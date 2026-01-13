@@ -6,6 +6,10 @@ export interface User {
   nome: string;
   id: number;
   role: boolean;
+  permissions: {
+    logs: boolean;
+    appointment: boolean;
+  };
 }
 
 interface UserContextData {

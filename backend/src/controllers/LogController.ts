@@ -12,8 +12,8 @@ interface LogCreate {
 export default class LogController {
   async list(req: Request, res: Response) {
     try {
-      // if(req.permissions.logs)
-      //   return res.status(401).send({ error: "Acesso negado" });
+      if (!req.permissions.logs)
+        return res.status(403).send({ error: "Acesso negado" });
 
       const {
         pagina = "1",

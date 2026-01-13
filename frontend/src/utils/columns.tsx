@@ -57,25 +57,29 @@ export const getAppointmentColumns = (
     header: "Ações",
     type: "action",
     cell: ({ row }) => (
-      <Button
-        variant="default"
-        className="rounded-full"
-        size="icon"
-        onClick={async () => {
-          try {
-            await api.put(`/appointments/${row.original.id}`, {
-              status: "cancelado",
-            });
-            toast.success("Agendamento atualizado com sucesso!");
-            onUpdate?.();
-          } catch (error) {
-            toast.error("Erro ao atualizar agendamento");
-            console.error(error);
-          }
-        }}
-      >
-        <X className="h-4 w-4" />
-      </Button>
+      <>
+        {row.original.status !== "cancelado" && (
+          <Button
+            variant="default"
+            className="rounded-full"
+            size="icon"
+            onClick={async () => {
+              try {
+                await api.put(`/appointments/${row.original.id}`, {
+                  status: "cancelado",
+                });
+                toast.success("Agendamento atualizado com sucesso!");
+                onUpdate?.();
+              } catch (error) {
+                toast.error("Erro ao atualizar agendamento");
+                console.error(error);
+              }
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </>
     ),
   },
 ];

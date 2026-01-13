@@ -23,29 +23,31 @@ const timeBlockController = new TimeBlockController();
 routes.post("/login", loginController.login);
 
 routes.post("/user", userController.createUser);
-routes.get("/users/clients", /*auth, admin,*/ userController.getClients);
-routes.get("/user/:id", /*auth*/ userController.getOne);
-routes.put("/user/:id", /*auth*/ userController.updateUser);
+routes.get("/users/clients", auth, admin, userController.getClients);
+routes.get("/user/:id", auth, userController.getOne);
+routes.put("/user/:id", auth, userController.updateUser);
+routes.get("/profile", auth, userController.getProfile);
+
 routes.put(
   "/user/:id/permission",
-  // auth,
-  // admin,
+  auth,
+  admin,
   userController.alterUserPermissions
 );
 
-routes.get("/appointments", /*auth*/ appointmentControler.list);
-routes.get("/appointment/user/:id", /*auth*/ appointmentControler.list);
-routes.post("/appointments", /*auth*/ appointmentControler.create);
-routes.put("/appointments/:id", /*auth*/ appointmentControler.update);
+routes.get("/appointments", auth, appointmentControler.list);
+routes.get("/appointment/user/:id", auth, appointmentControler.list);
+routes.post("/appointments", auth, appointmentControler.create);
+routes.put("/appointments/:id", auth, appointmentControler.update);
 
-routes.get("/logs", /*auth*/ logController.list);
-routes.get("/logs", /*auth*/ logController.list);
-routes.get("/logs/user/:id", /*auth*/ logController.list);
+routes.get("/logs", auth, logController.list);
+routes.get("/logs", auth, logController.list);
+routes.get("/logs/user/:id", auth, logController.list);
 
-routes.get("/rooms", /*auth*/ roomController.list);
-routes.get("/room/:id", /*auth, admin*/ roomController.getOne);
-routes.put("/room/:id", /*auth, admin*/ roomController.update);
+routes.get("/rooms", auth, roomController.list);
+routes.get("/room/:id", auth, admin, roomController.getOne);
+routes.put("/room/:id", auth, admin, roomController.update);
 
-routes.get("/room/:roomId/timeblocks", /*auth*/ timeBlockController.listByRoom);
+routes.get("/room/:roomId/timeblocks", auth, timeBlockController.listByRoom);
 
 export default routes;

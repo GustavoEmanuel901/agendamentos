@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Op } from "sequelize";
 import LogController from "./LogController";
 import generateToken from "../utils/generate_token";
-import admin from "../middlewares/admin";
+import { permission } from "node:process";
 
 export default class UserController {
   async createUser(req: Request, res: Response) {
@@ -54,6 +54,10 @@ export default class UserController {
       const token = generateToken({
         id: user.dataValues.id,
         role: user.dataValues.admin,
+        permissions: {
+          logs: user.dataValues.permissao_logs,
+          appointment: user.dataValues.permissao_agendamento,
+        },
       });
 
       return res
@@ -66,9 +70,13 @@ export default class UserController {
         })
         .json({
           message: "Usuário criado com sucesso",
-          user_id: user.dataValues.id,
+          id: user.dataValues.id,
           nome: user.dataValues.nome,
           role: user.dataValues.admin,
+          permissions: {
+            logs: user.dataValues.permissao_logs,
+            appointment: user.dataValues.permissao_agendamento,
+          },
         });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -86,18 +94,22 @@ export default class UserController {
     try {
       const id = req.userId;
 
+      console.log("Recuperando perfil do usuário ID:", id);
+
       const user = await User.findByPk(id);
 
-      if(!user)
+      if (!user)
         return res.status(404).json({ message: "Usuário não encontrado" });
-
-
 
       return res.json({
         id: user.dataValues.id,
         nome: user.dataValues.nome,
         sobrenome: user.dataValues.sobrenome,
-        admin: user.dataValues.admin ? 'admin' : 'cliente',
+        permissions: {
+          logs: user.dataValues.permissao_logs,
+          appointment: user.dataValues.permissao_agendamento,
+        },
+        admin: user.dataValues.admin ? "admin" : "cliente",
       });
     } catch {
       return res.status(500).json({ message: "Erro ao recuperar usuário" });
@@ -178,7 +190,7 @@ export default class UserController {
 
       const user = await User.findByPk(id);
 
-      if(!user)
+      if (!user)
         return res.status(404).json({ message: "Usuário não encontrado" });
 
       return res.json(user);

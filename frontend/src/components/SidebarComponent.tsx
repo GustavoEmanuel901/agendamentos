@@ -20,45 +20,29 @@ import {
   Users,
 } from "lucide-react";
 
+export interface SidebarItemProps {
+  title: string;
+  url: string;
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>;
+  tipo: "admin" | "cliente" | "global";
+  verifyPermission?: () => boolean;
+}
+
 interface SidebarProps {
   nome: string;
+  items: SidebarItemProps[];
   tipo: "admin" | "cliente";
   selectedItem?: string;
   onSelect?: (title: string) => void;
 }
-
-const items = [
-  {
-    title: "Agendamentos",
-    url: "#",
-    icon: CalendarRange,
-    tipo: "global",
-  },
-  {
-    title: "Clientes",
-    url: "#",
-    icon: Users,
-    tipo: "admin",
-  },
-  {
-    title: "Logs",
-    url: "#",
-    icon: ListCheck,
-    tipo: "global",
-  },
-  {
-    title: "Minha Conta",
-    url: "#",
-    icon: User,
-    tipo: "cliente",
-  },
-];
 
 const SidebarComponent: React.FC<SidebarProps> = ({
   nome,
   tipo,
   selectedItem,
   onSelect,
+  items,
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
 
@@ -79,6 +63,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         <SidebarMenu className="p-4">
           {items
             .filter((item) => item.tipo === "global" || item.tipo === tipo)
+            .filter((item) => item.verifyPermission ? item.verifyPermission() : true)
             .map((item) => {
               const isSelected = selected === item.title;
               return (

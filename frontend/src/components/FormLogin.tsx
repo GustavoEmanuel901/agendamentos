@@ -109,11 +109,12 @@ const FormLogin = ({
       setUser({
         nome: response.data.nome,
         role: response.data.role,
-        id: response.data.user_id,
+        permissions: response.data.permissions,
+        id: response.data.id,
       });
 
       //toast.success("Login realizado com sucesso!");
-      
+
       router.replace("/agendamentos");
 
       // eslint-disable-next-line

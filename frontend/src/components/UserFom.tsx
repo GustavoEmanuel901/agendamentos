@@ -165,7 +165,8 @@ export default function UserForm({ type }: UserFormProps) {
         setUser({
           nome: response.data.nome,
           role: response.data.role,
-          id: response.data.user_id,
+          permissions: response.data.permissions,
+          id: response.data.id,
         });
 
         toast.success("Cadastro realizado com sucesso!");

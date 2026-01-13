@@ -3,7 +3,6 @@ import User from "../models/User";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generate_token";
 import LogController from "./LogController";
-import { iso } from "zod";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
@@ -54,6 +53,10 @@ export default class LoginController {
           user_id: user.dataValues.id,
           role: user.dataValues.admin,
           nome: user.dataValues.nome,
+          permissions: {
+            logs: user.dataValues.permissao_logs,
+            appointment: user.dataValues.permissao_agendamento,
+          },
           message: "Logado com sucesso",
         });
     } catch (error) {

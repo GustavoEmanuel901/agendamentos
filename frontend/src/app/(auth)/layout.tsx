@@ -1,25 +1,42 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import api from "@/services/api";
+import UserDataProvider from "@/components/UserDataProvider";
 
 export default async function Layout({
   children,
-}: { children: React.ReactNode }) {
-    const cookiesList = await cookies();
+}: {
+  children: React.ReactNode;
+}) {
+  const cookiesList = await cookies();
 
-    const hasToken = cookiesList.has("token");
+  const hasToken = cookiesList.has("token");
 
-    if (!hasToken) 
-        return redirect("/");
+  if (!hasToken) return redirect("/");
 
-    const requestUser = await api.get("/profile", {
-        headers: {
-            Authorization: cookiesList.toString(),
-        },
-        
+  const token = cookiesList.get("token")?.value;
+
+  const requestUser = await api
+    .get("/profile", {
+      headers: {
+        Authorization: token,
+      },
+    })
+    .then((res) => res)
+    .catch((err) => {
+      if (err.status === 401) {
+        cookiesList.delete("token");
+
+        // Retorna Toast com erros
+        return { status: 401, data: null };
+      }
+
+      return { status: err.response?.status || 500, data: null };
     });
 
-    requestUser.status !== 200 && redirect("/");
+  if (requestUser.status !== 200) redirect("/");
 
-    return <>{children}</>;
+  return (
+    <UserDataProvider userData={requestUser.data}>{children}</UserDataProvider>
+  );
 }

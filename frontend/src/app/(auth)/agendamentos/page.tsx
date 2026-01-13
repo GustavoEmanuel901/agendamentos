@@ -1,7 +1,9 @@
 "use client";
 
 import DashboardScreen from "@/components/DashboardScreen";
-import SidebarComponent from "@/components/SidebarComponent";
+import SidebarComponent, {
+  SidebarItemProps,
+} from "@/components/SidebarComponent";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ApiResponse, Appointment, Log, Room } from "@/types/types";
 import { useState, useEffect, useMemo } from "react";
@@ -38,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import UserForm from "@/components/UserFom";
 import HeaderTable from "@/components/HeaderTable";
+import { items } from "@/utils/sidebarItems";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -187,11 +190,32 @@ const Agendamentos = () => {
     }
   };
 
+  const verifyPermissionLog = () => {
+    return user?.permissions.logs ?? false;
+  };
+
+  const verifyPermissionAppointments = () => {
+    console.log("User Permissions:", user?.permissions);
+    return user?.permissions.appointment ?? false;
+  };
+
+  const sidebarItems = useMemo(() => {
+    return items.map((item) => {
+      if (item.title === "Logs") {
+        return { ...item, verifyPermission: verifyPermissionLog };
+      }
+      if (item.title === "Agendamentos") {
+        return { ...item, verifyPermission: verifyPermissionAppointments };
+      }
+      return item;
+    });
+  }, [user]);
+
   useEffect(() => {
-    if (!user) {
-      router.push("/");
-      return;
-    }
+    // if (!user) {
+    //   //router.push("/");
+    //   return;
+    // }
 
     // Carregar dados ao mudar de aba
     if (selectedItem === "Agendamentos") {
@@ -210,8 +234,9 @@ const Agendamentos = () => {
     <SidebarProvider>
       <div className="flex flex-row flex-1 h-screen">
         <SidebarComponent
-          nome={"Teste"}
-          tipo={"cliente"}
+          items={sidebarItems}
+          nome={user?.nome || "Usuário"}
+          tipo={user?.role ? "admin" : "cliente"}
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
         />

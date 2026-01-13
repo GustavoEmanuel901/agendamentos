@@ -10,15 +10,16 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+   (error) => {
     if (error.response && error.response.status === 401) {
       // Token inválido ou expirado - redireciona para login
       // Os cookies serão limpos automaticamente pelo backend
+
       if (typeof window !== "undefined") {
         window.location.href = "/";
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

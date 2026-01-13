@@ -62,7 +62,7 @@ export async function up(queryInterface, Sequelize) {
     },
     permissao_logs: {
       type: Sequelize.BOOLEAN,
-      defaultValue: false,
+      defaultValue: true,
     },
     permissao_agendamento: {
       type: Sequelize.BOOLEAN,

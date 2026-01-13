@@ -11,8 +11,8 @@ type AppointmentStatus = "agendado" | "em analise" | "cancelado";
 export default class AppointmentControler {
   async create(req: Request, res: Response) {
     try {
-      // if (req.permissions.logs)
-      //   return res.status(401).send({ error: "Acesso negado" });
+      if (!req.permissions.appointment)
+        return res.status(403).send({ error: "Acesso negado" });
 
       const appointmentCreateSchema = z.object({
         data: z
@@ -79,8 +79,11 @@ export default class AppointmentControler {
 
   async list(req: Request, res: Response) {
     try {
-      // if (req.permissions.logs)
-      //   return res.status(401).send({ error: "Acesso negado" });
+      console.log("Permissões do usuário:", req.permissions);
+
+      if (!req.permissions.appointment)
+        return res.status(403).send({ error: "Acesso negado" });
+
       const {
         pagina = "1",
         limite = "10",
@@ -107,7 +110,7 @@ export default class AppointmentControler {
         }
       }
 
-      if(id ) { 
+      if (id) {
         where.user_id = id;
       }
 
@@ -138,8 +141,6 @@ export default class AppointmentControler {
         as: "room",
         attributes: ["nome"],
       });
-
-
 
       const { count, rows } = await Appointment.findAndCountAll({
         where,
@@ -181,8 +182,9 @@ export default class AppointmentControler {
 
   async update(req: Request, res: Response) {
     try {
-      // if (req.permissions.logs)
-      //   return res.status(401).send({ error: "Acesso negado" });
+      if (!req.permissions.appointment)
+        return res.status(403).send({ error: "Acesso negado" });
+
       const { id } = req.params;
 
       const updateSchema = z.object({
