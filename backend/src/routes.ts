@@ -22,7 +22,6 @@ const logController = new LogController();
 const roomController = new RoomController();
 const timeBlockController = new TimeBlockController();
 
-
 // LOGIN ROUTES
 routes.post("/login", loginController.login);
 routes.get("/logout", auth, loginController.logout);
@@ -34,7 +33,7 @@ routes.get("/user/:id", auth, userController.getOne);
 routes.put("/user/:id", auth, userController.updateUser);
 routes.get("/profile", auth, userController.getProfile);
 routes.put(
-"/user/:id/permission",
+  "/user/:id/permission",
   auth,
   admin,
   userController.alterUserPermissions
@@ -43,12 +42,6 @@ routes.put(
 // APPOINTMENT ROUTES
 routes.get(
   "/appointments",
-  auth,
-  permissionAppointments,
-  appointmentControler.list
-);
-routes.get(
-  "/appointment/user/:id",
   auth,
   permissionAppointments,
   appointmentControler.list

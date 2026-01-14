@@ -193,6 +193,13 @@ export default class AppointmentControler {
             .json({ message: ResponseMessages.ROOM_NOT_FOUND });
       }
 
+      // SOMENTE ADM PODEM CONFIRMAR AGENDAMENTOS
+      if (payload.status == AppointmentStatusEnum.SCHEDULED && !req.isAdmin) {
+        return res
+          .status(403)
+          .json({ message: ResponseMessages.ACCESS_DENIED });
+      }
+
       await appointment.update(payload);
 
       const logController = new LogController();

@@ -7,6 +7,7 @@ import RoomTimeBlocksController from "./RoomTimeBlocksController";
 import ResponseMessages from "../utils/responseMessages";
 import { RoomCreateOrUpdateSchema } from "../schemas/roomSchemas";
 import { GetFilteres } from "../@types/filter";
+import TimeBlock from "../models/TimeBlock";
 
 export default class RoomController {
   async list(req: Request, res: Response) {
@@ -35,7 +36,13 @@ export default class RoomController {
       const { id } = req.params;
 
       const room = await Room.findByPk(id, {
-        include: ["timeBlocks"],
+        include: [
+          {
+            model: TimeBlock,
+            as: "time_blocks",
+            attributes: ["id", "minutes"],
+          },
+        ],
       });
 
       if (!room)
@@ -118,12 +125,10 @@ export default class RoomController {
       });
     } catch (err: any) {
       if (err instanceof z.ZodError)
-        return res
-          .status(400)
-          .json({
-            message: ResponseMessages.VALIDATION_ERROR,
-            errors: err.message,
-          });
+        return res.status(400).json({
+          message: ResponseMessages.VALIDATION_ERROR,
+          errors: err.message,
+        });
       console.error(err);
       return res
         .status(500)
