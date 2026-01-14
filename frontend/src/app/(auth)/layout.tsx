@@ -30,9 +30,6 @@ export default async function Layout({
     .catch((err) => {
       if (err.status === 401) {
         cookiesList.delete("token");
-
-        // Retorna Toast com erros
-        return { status: 401, data: null };
       }
 
       return { status: err.response?.status || 500, data: null };

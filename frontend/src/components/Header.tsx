@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-interface SidebarProps {
+interface HeaderProps {
   buttonLabel: string;
   route?: string;
 }
 
-export default function Sidebar({ buttonLabel, route }: SidebarProps) {
+export default function Header({ buttonLabel, route }: HeaderProps) {
   return (
     <header className="flex p-5 items-center justify-between border-b border-gray-200">
       <Image src="/Group.svg" alt="logo" width={40} height={40} />

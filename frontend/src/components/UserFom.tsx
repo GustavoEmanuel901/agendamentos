@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Input from "./Input";
 import { toast } from "sonner";
+import { apiError } from "@/utils/apiError";
 
 interface UserFormProps {
   type: "register" | "edit";
@@ -17,8 +18,8 @@ interface UserFormProps {
 export default function UserForm({ type }: UserFormProps) {
   const router = useRouter();
   const [showAddressFields, setShowAddressFields] = useState(false);
-  const [isLoadingCEP, setIsLoadingCEP] = useState(false);
-  const [cepError, setCepError] = useState<string>("");
+  const [isLoadingZipCode, setIsLoadingZipCode] = useState(false);
+  const [ZipCodeError, setZipCodeError] = useState<string>("");
 
   const { setUser, user } = useUser();
 
@@ -33,124 +34,118 @@ export default function UserForm({ type }: UserFormProps) {
     resolver: zodResolver(userSchema),
     mode: "onChange",
     defaultValues: {
-      nome: "",
-      sobrenome: "",
+      name: "",
+      last_name: "",
       email: "",
-      senha: "",
-      cep: "",
-      endereco: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidade: "",
-      estado: "",
+      password: "",
+      zip_code: "",
+      address: "",
+      number: "",
+      supplement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
     },
   });
 
-  // Observa o valor do CEP
-  const cepValue = watch("cep");
+  // Observa o valor do ZipCode
+  const ZipCodeValue = watch("zip_code");
 
-  // Função para buscar endereço pelo CEP
-  const buscarEnderecoPorCEP = async (cep: string) => {
+  // Função para buscar endereço pelo ZipCode
+  const searchAddressByZipCode = async (zip_code: string) => {
     // Remove caracteres não numéricos
-    const cepNumerico = cep.replace(/\D/g, "");
+    const zipCodeNumeric = zip_code.replace(/\D/g, "");
 
-    if (cepNumerico.length !== 8) {
+    if (zipCodeNumeric.length !== 8) {
       return null;
     }
 
-    setIsLoadingCEP(true);
-    setCepError("");
+    setIsLoadingZipCode(true);
+    setZipCodeError("");
 
     try {
       const data = await axios.get<ViaCEPResponse>(
-        `https://viacep.com.br/ws/${cepNumerico}/json/`
+        `https://viacep.com.br/ws/${zipCodeNumeric}/json/`
       );
 
       if (data.data.erro) {
-        setCepError("CEP não encontrado");
+        setZipCodeError("ZipCode não encontrado");
         return null;
       }
 
       console.log("Endereço encontrado:", data.data);
       return data;
     } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-      setCepError("Erro ao buscar CEP. Tente novamente.");
-      return null;
+      apiError(error, "Erro ao buscar endereço pelo ZipCode.");
     } finally {
-      setIsLoadingCEP(false);
+      setIsLoadingZipCode(false);
     }
   };
 
-  // Efeito para buscar CEP quando estiver completo
+  // Efeito para buscar ZipCode quando estiver completo
   useEffect(() => {
-    const buscarCEP = async () => {
-      const cepNumerico = cepValue?.replace(/\D/g, "");
+    const getZipCode = async () => {
+      const zipCodeNumeric = ZipCodeValue?.replace(/\D/g, "");
 
-      if (cepNumerico?.length === 8) {
-        const endereco = await buscarEnderecoPorCEP(cepValue);
+      if (zipCodeNumeric?.length === 8) {
+        const address = await searchAddressByZipCode(ZipCodeValue);
 
-        if (endereco) {
+        if (address) {
           // Preenche os campos com os dados da API
-          setValue("endereco", endereco.data.logradouro);
-          setValue("bairro", endereco.data.bairro);
-          setValue("cidade", endereco.data.localidade);
-          setValue("estado", endereco.data.estado);
-          setValue("complemento", endereco.data.complemento || "");
+          setValue("address", address.data.logradouro);
+          setValue("neighborhood", address.data.bairro);
+          setValue("city", address.data.localidade);
+          setValue("state", address.data.estado);
+          setValue("supplement", address.data.complemento || "");
 
           // Mostra os campos de endereço
-          if (!showAddressFields) {
-            setShowAddressFields(true);
-          }
+          if (!showAddressFields) setShowAddressFields(true);
 
           // Valida os campos preenchidos
-          await trigger(["endereco", "bairro", "cidade", "estado"]);
+          await trigger(["address", "neighborhood", "city", "state"]);
         } else {
-          // Se não encontrou o CEP, ainda mostra os campos para preenchimento manual
+          // Se não encontrou o ZipCode, ainda mostra os campos para preenchimento manual
           setShowAddressFields(true);
         }
-      } else if (cepNumerico && cepNumerico.length < 8) {
+      } else if (zipCodeNumeric && zipCodeNumeric.length < 8) {
         setShowAddressFields(false);
-        setCepError("");
+        setZipCodeError("");
       }
     };
 
     // Debounce para não fazer requisição a cada tecla
-    const timeoutId = setTimeout(buscarCEP, 800);
+    const timeoutId = setTimeout(getZipCode, 800);
     return () => clearTimeout(timeoutId);
-  }, [cepValue, setValue, trigger, showAddressFields]);
+  }, [ZipCodeValue, setValue, trigger, showAddressFields]);
 
   useEffect(() => {
-    const carregarDadosUsuario = async () => {
+    const getUserData = async () => {
       if (type === "edit" && user?.id) {
         try {
           const response = await api.get(`/user/${user.id}`);
           const userData = response.data;
 
           // Preenche os campos do formulário
-          setValue("nome", userData.nome || "");
-          setValue("sobrenome", userData.sobrenome || "");
+          setValue("name", userData.name || "");
+          setValue("last_name", userData.last_name || "");
           setValue("email", userData.email || "");
-          setValue("cep", userData.cep || "");
-          setValue("endereco", userData.endereco || "");
-          setValue("numero", userData.numero || "");
-          setValue("complemento", userData.complemento || "");
-          setValue("bairro", userData.bairro || "");
-          setValue("cidade", userData.cidade || "");
-          setValue("estado", userData.estado || "");
+          setValue("zip_code", userData.zip_code || "");
+          setValue("address", userData.address || "");
+          setValue("number", userData.number || "");
+          setValue("supplement", userData.supplement || "");
+          setValue("neighborhood", userData.neighborhood || "");
+          setValue("city", userData.city || "");
+          setValue("state", userData.state || "");
 
           // Se tiver CEP, mostra os campos de endereço
-          if (userData.cep) {
-            setShowAddressFields(true);
-          }
+          if (userData.zip_code) setShowAddressFields(true);
         } catch (error) {
           console.error("Erro ao carregar dados do usuário:", error);
         }
       }
     };
 
-    carregarDadosUsuario();
+    getUserData();
   }, [type, user?.id, setValue]);
 
   const onSubmit = async (data: UserFormData) => {
@@ -161,28 +156,25 @@ export default function UserForm({ type }: UserFormProps) {
         return;
       }
 
-      api.post("/user", data).then((response) => {
-        setUser({
-          nome: response.data.nome,
-          role: response.data.role,
-          permissions: response.data.permissions,
-          id: response.data.id,
-        });
+      const response = await api.post("/user", data);
 
-        toast.success("Cadastro realizado com sucesso!");
-
-        if (response.status === 201) {
-          router.push("/agendamentos");
-        }
+      setUser({
+        name: response.data.name,
+        is_admin: response.data.is_admin,
+        permissions: response.data.permissions,
+        id: response.data.id,
       });
+
+      toast.success("Cadastro realizado com sucesso!");
+
+      if (response.status === 201) router.replace("/agendamentos");
     } catch (error) {
-      console.error("Erro no cadastro:", error);
-      toast.error("Erro ao realizar cadastro. Tente novamente.");
+      apiError(error, "Erro ao enviar dados do usuário.");
     }
   };
 
-  // Máscara para CEP
-  const formatCEP = (value: string) => {
+  // Máscara para ZipCode
+  const formatZipCode = (value: string) => {
     return value
       .replace(/\D/g, "")
       .replace(/(\d{5})(\d)/, "$1-$2")
@@ -214,11 +206,11 @@ export default function UserForm({ type }: UserFormProps) {
                 <Input
                   type="text"
                   label="Nome"
-                  name="nome"
+                  name="name"
                   placeholder="Digite seu nome"
                   register={register}
                   required
-                  error={errors.nome}
+                  error={errors.name}
                 />
               </div>
 
@@ -226,11 +218,11 @@ export default function UserForm({ type }: UserFormProps) {
                 <Input
                   type="text"
                   label="Sobrenome"
-                  name="sobrenome"
+                  name="last_name"
                   placeholder="Digite seu sobrenome"
                   register={register}
                   required
-                  error={errors.sobrenome}
+                  error={errors.last_name}
                 />
               </div>
             </div>
@@ -250,11 +242,11 @@ export default function UserForm({ type }: UserFormProps) {
               <Input
                 type="password"
                 label="Senha"
-                name="senha"
+                name="password"
                 placeholder="********"
                 register={register}
                 required
-                error={errors.senha}
+                error={errors.password}
                 showPasswordToggle={true}
               />
             </div>
@@ -273,29 +265,29 @@ export default function UserForm({ type }: UserFormProps) {
                     focus:outline-none focus:ring-2 focus:ring-blue-500
                     transition duration-200 text-sm sm:text-base
                     ${
-                      errors.cep || cepError
+                      errors.zip_code || ZipCodeError
                         ? "border-red-500 focus:ring-red-500"
                         : "border-gray-300"
                     }
-                    ${isLoadingCEP ? "pr-12" : ""}
+                    ${isLoadingZipCode ? "pr-12" : ""}
                   `}
-                  {...register("cep", {
+                  {...register("zip_code", {
                     onChange: (e) => {
-                      const formatted = formatCEP(e.target.value);
+                      const formatted = formatZipCode(e.target.value);
                       e.target.value = formatted;
                     },
                   })}
                 />
 
-                {isLoadingCEP && (
+                {isLoadingZipCode && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                   </div>
                 )}
               </div>
-              {(errors.cep || cepError) && (
+              {(errors.zip_code || ZipCodeError) && (
                 <p className="mt-1 text-red-500 text-sm sm:text-base">
-                  {errors.cep?.message || cepError}
+                  {errors.zip_code?.message || ZipCodeError}
                 </p>
               )}
             </div>
@@ -305,60 +297,60 @@ export default function UserForm({ type }: UserFormProps) {
                 <Input
                   type="text"
                   label="Endereço (Rua/Avenida)"
-                  name="endereco"
+                  name="address"
                   placeholder="Digite o nome da rua ou avenida"
                   register={register}
-                  error={errors.endereco}
+                  error={errors.address}
                   disabled={true}
                 />
 
                 <Input
                   type="text"
                   label="Número"
-                  name="numero"
+                  name="number"
                   placeholder="Nº"
                   register={register}
-                  error={errors.numero}
-                  disabled={isLoadingCEP}
+                  error={errors.number}
+                  disabled={isLoadingZipCode}
                 />
 
                 <Input
                   type="text"
                   label="Complemento"
-                  name="complemento"
+                  name="supplement"
                   placeholder="Apto, Bloco, etc. (opcional)"
                   register={register}
-                  error={errors.complemento}
-                  disabled={isLoadingCEP}
+                  error={errors.supplement}
+                  disabled={isLoadingZipCode}
                 />
 
                 <Input
                   type="text"
                   label="Bairro"
-                  name="bairro"
+                  name="neighborhood"
                   placeholder="Digite o bairro"
                   register={register}
-                  error={errors.bairro}
+                  error={errors.neighborhood}
                   disabled={true}
                 />
 
                 <Input
                   type="text"
                   label="Cidade"
-                  name="cidade"
+                  name="city"
                   placeholder="Digite a cidade"
                   register={register}
-                  error={errors.cidade}
+                  error={errors.city}
                   disabled={true}
                 />
 
                 <Input
                   type="text"
                   label="Estado"
-                  name="estado"
+                  name="state"
                   placeholder="UF"
                   register={register}
-                  error={errors.estado}
+                  error={errors.state}
                   disabled={true}
                 />
               </div>

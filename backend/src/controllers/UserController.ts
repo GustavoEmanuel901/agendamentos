@@ -54,7 +54,7 @@ export default class UserController {
 
       return res
         .status(201)
-        .cookie("token", token, {
+        .cookie("token", `Bearer ${token}`, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
@@ -73,7 +73,7 @@ export default class UserController {
           is_admin: user.dataValues.admin,
           permissions: {
             logs: user.dataValues.permission_logs,
-            appointment: user.dataValues.permission_appointments,
+            appointments: user.dataValues.permission_appointments,
           },
         });
     } catch (error: any) {
@@ -106,7 +106,7 @@ export default class UserController {
         last_name: user.dataValues.last_name,
         permissions: {
           logs: user.dataValues.permission_logs,
-          appointment: user.dataValues.permission_appointments,
+          appointments: user.dataValues.permission_appointments,
         },
         is_admin: user.dataValues.admin,
       });

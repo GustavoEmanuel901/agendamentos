@@ -91,7 +91,7 @@ export interface ApiError {
   status: number;
   response: {
     data: {
-      error: string;
+      message: string;
     };
   };
 }
