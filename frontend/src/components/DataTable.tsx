@@ -2,6 +2,7 @@
 
 // components/DataTable/data-table.tsx
 "use client";
+"use no memo";
 
 import {
   ColumnDef,

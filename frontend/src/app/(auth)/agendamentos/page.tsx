@@ -263,39 +263,42 @@ const Agendamentos = () => {
   //   }
   // };
   // Buscar detalhes da sala
-  const fetchRoomDetail = async (roomId: string) => {
-    try {
-      const response = await api.get(`/room/${roomId}`);
-      const data = response.data;
+  const fetchRoomDetail = useCallback(
+    async (roomId: string) => {
+      try {
+        const response = await api.get(`/room/${roomId}`);
+        const data = response.data;
 
-      // Preencher o formulário com os dados da API
-      if (data.name) {
-        setRoomSearchEdit(data.name);
-        setValueEdit("name", data.name);
+        // Preencher o formulário com os dados da API
+        if (data.name) {
+          setRoomSearchEdit(data.name);
+          setValueEdit("name", data.name);
+        }
+
+        if (data.start_time) {
+          setTimeRange((prev) => ({ ...prev, inicio: data.start_time }));
+          setValueEdit("start_time", data.start_time);
+        }
+
+        if (data.end_time) {
+          setTimeRange((prev) => ({ ...prev, fim: data.end_time }));
+          setValueEdit("end_time", data.end_time);
+        }
+
+        // Buscar time_blocks e pré-selecionar os que pertencem a essa sala
+        if (data.time_blocks && data.time_blocks.length > 0) {
+          const timeblockIds = data.time_blocks.map((tb: TimeBlocks) => tb.id);
+
+          await fetchTimeBlocks(timeblockIds);
+        } else {
+          await fetchTimeBlocks();
+        }
+      } catch (error) {
+        apiError(error, "Erro ao buscar detalhes da sala");
       }
-
-      if (data.start_time) {
-        setTimeRange((prev) => ({ ...prev, inicio: data.start_time }));
-        setValueEdit("start_time", data.start_time);
-      }
-
-      if (data.end_time) {
-        setTimeRange((prev) => ({ ...prev, fim: data.end_time }));
-        setValueEdit("end_time", data.end_time);
-      }
-
-      // Buscar time_blocks e pré-selecionar os que pertencem a essa sala
-      if (data.time_blocks && data.time_blocks.length > 0) {
-        const timeblockIds = data.time_blocks.map((tb: TimeBlocks) => tb.id);
-
-        await fetchTimeBlocks(timeblockIds);
-      } else {
-        await fetchTimeBlocks();
-      }
-    } catch (error) {
-      apiError(error, "Erro ao buscar detalhes da sala");
-    }
-  };
+    },
+    [setValueEdit]
+  );
 
   // Buscar clientes com filtros
   const fetchClients = async (newFilters?: DataTableFilters) => {
