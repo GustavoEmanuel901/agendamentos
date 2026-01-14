@@ -7,42 +7,43 @@ export type Appointment = {
   email: string;
   room: Room;
   status: "agendado" | "Em análise" | "cancelado";
-  data_agendamento: string; // ISO string
+  date_appointment: string; // ISO string
 };
 
 export type Log = {
   id: string;
-  descricao: string;
-  modulo: string;
-  data_criacao: string; // ISO string
+  description: string;
+  module: string;
+  created_at: string; // ISO string
 };
 
 export type Room = {
   id: string;
-  nome: string;
-  timeblocks: TimeBlocks[];
+  name: string;
+  time_blocks: TimeBlocks[];
 };
 
 export type Client = {
-  permissoes: {
-    agendamentos: boolean;
+  permissions: {
+    appointments: boolean;
     logs: boolean;
   };
   user: {
     id: string;
-    nome: string;
-    tipo: "admin" | "cliente";
+    name: string;
+    type: "Admin" | "Cliente";
   };
-  nome: string;
-  endereco: string;
-  data_criacao: string; // ISO string
+  name: string;
+  address: string;
+  created_at: string; // ISO string
   status: boolean;
 };
 
 export type Columns<T> = ColumnDef<T> & {
   accessorKey?: string;
   header: string;
-  type: "normal" | "conjunto" | "badge" | "action";
+  type: "normal" | "object" | "badge" | "action";
+  objectKeys?: string[]; // Only for type "object"
   variant?:
     | "secondary"
     | "default"
@@ -75,16 +76,16 @@ export interface ViaCEPResponse {
 }
 
 export interface DataTableFilters {
-  pesquisa?: string;
-  data?: string;
+  search?: string;
+  filterDate?: string;
   page?: number;
-  ordenacao?: string;
-  ordem?: "asc" | "desc";
+  order?: string;
+  sort?: "asc" | "desc";
 }
 
 export interface TimeBlocks {
   id: string;
-  minutos: number;
+  minutes: number;
 }
 
 export interface ApiError {

@@ -1,7 +1,9 @@
 import { DataTable } from "@/components/DataTable";
 import HeaderTable from "./HeaderTable";
-import { ColumnDef } from "@tanstack/react-table";
-import type { Columns as ColumnWithType } from "@/types/types";
+import type {
+  Columns as ColumnWithType,
+  DataTableFilters,
+} from "@/types/types";
 
 interface DashboardScreenProps<TData> {
   title: string;
@@ -14,11 +16,8 @@ interface DashboardScreenProps<TData> {
   totalPages?: number;
   currentPage?: number;
   isLoading?: boolean;
-  onFilterChange?: (filters: {
-    pesquisa?: string;
-    data?: string;
-    page?: number;
-  }) => void;
+  placeholderInput?: string;
+  onFilterChange?: (filters: DataTableFilters) => void;
   getRowClassName?: (row: TData) => string;
   onRowSelect?: (row: TData | null) => void;
 }
@@ -32,6 +31,7 @@ export default function DashboardScreen<TData>({
   totalPages,
   currentPage,
   isLoading,
+  placeholderInput,
   onFilterChange,
   getRowClassName,
   onRowSelect,
@@ -40,13 +40,14 @@ export default function DashboardScreen<TData>({
   return (
     <div className="flex flex-col flex-1 w-full min-h-0">
       <HeaderTable title={title} subtitle={subtitle} />
-      <div className="flex-1 w-full min-h-0 overflow-auto">
+      <div className="flex-1 w-full min-h-0 overflow-auto p-2 md:p-4">
         <DataTable
           columns={columns}
           data={data}
           totalPages={totalPages}
           currentPage={currentPage}
           isLoading={isLoading}
+          placeholderInput={placeholderInput}
           onFilterChange={onFilterChange}
           getRowClassName={getRowClassName}
           onRowSelect={onRowSelect}

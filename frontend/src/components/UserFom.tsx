@@ -239,16 +239,18 @@ export default function UserForm({ type }: UserFormProps) {
             />
 
             <div>
-              <Input
-                type="password"
-                label="Senha"
-                name="password"
-                placeholder="********"
-                register={register}
-                required
-                error={errors.password}
-                showPasswordToggle={true}
-              />
+              {type === "register" && (
+                <Input
+                  type="password"
+                  label="Senha"
+                  name="password"
+                  placeholder="********"
+                  register={register}
+                  required
+                  error={errors.password}
+                  showPasswordToggle={true}
+                />
+              )}
             </div>
 
             {/* CEP com campo customizado para máscara */}

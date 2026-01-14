@@ -47,6 +47,7 @@ export interface DataTableProps<TData> {
   }) => void;
   getRowClassName?: (row: TData) => string;
   onRowSelect?: (row: TData | null) => void;
+  placeholderInput?: string;
 }
 
 export function DataTable<TData>({
@@ -59,6 +60,7 @@ export function DataTable<TData>({
   onFilterChange,
   getRowClassName,
   onRowSelect,
+  placeholderInput,
 }: DataTableProps<TData>) {
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -86,7 +88,8 @@ export function DataTable<TData>({
       if (col.type === "action") {
       }
 
-      if (col.type === "conjunto") {
+      if (col.type === "object") {
+        //REVER ESSA PARTE
         return {
           ...col,
           cell: ({ getValue }) => {
@@ -97,21 +100,17 @@ export function DataTable<TData>({
             if (!v || typeof v !== "object") {
               return <span>{String(v ?? "")}</span>;
             }
+
+            Object.keys(v).forEach((key) => {
+              if (col.objectKeys && !col.objectKeys.includes(key))
+                delete v[key];
+            });
+
             const values = Object.values(v);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const top =
-              (v as any).top ??
-              (v as any).primary ??
-              (v as any).label ??
-              values[1] ??
-              "";
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+            const top = v.top ?? v.primary ?? v.label ?? values[0] ?? "";
             const bottom =
-              (v as any).bottom ??
-              (v as any).secondary ??
-              (v as any).subLabel ??
-              values[2] ??
-              "";
+              v.bottom ?? v.secondary ?? v.subLabel ?? values[1] ?? "";
             return (
               <div className="flex flex-col">
                 <span className="font-medium leading-tight">
@@ -208,14 +207,14 @@ export function DataTable<TData>({
 
   return (
     <>
-      <div className="border rounded-md bg-white mt-10 mx-10 p-6 h-full">
-        <div className="flex flex-wrap items-center">
+      <div className="border rounded-md bg-white mt-4 md:mt-10 mx-2 md:mx-10 p-3 md:p-6 flex flex-col">
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 mb-4">
           {/* 🔍 Search */}
-          <div className="relative ">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome"
-              className="pl-9 w-100"
+              placeholder={placeholderInput}
+              className="pl-9 w-full"
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
               disabled={isLoading}
@@ -227,7 +226,7 @@ export function DataTable<TData>({
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                className="gap-2 border ml-4 w-30"
+                className="gap-2 border w-full sm:w-auto"
                 disabled={isLoading}
               >
                 <CalendarIcon className="h-4 w-4" />
@@ -247,95 +246,100 @@ export function DataTable<TData>({
           </Popover>
 
           {/* ➕ Botão */}
-          <div className="ml-auto gap-2">{children}</div>
+          <div className="w-full sm:w-auto sm:ml-auto">{children}</div>
         </div>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <p className="text-muted-foreground">Carregando...</p>
-          </div>
-        ) : table.getRowModel().rows.length ? (
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((group) => (
-                <TableRow key={group.id}>
-                  {group.headers.map((header) => {
-                    const columnDef = header.column
-                      .columnDef as ColumnWithType<TData>;
 
-                    return (
-                      <TableHead key={header.id}>
-                        {columnDef.isOrderable ? (
-                          <button
-                            onClick={handleSortChange}
-                            className="flex items-center gap-2 hover:text-foreground transition-colors"
-                            disabled={isLoading}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {sortOrder && (
-                              <span className="text-xs">
-                                {sortOrder === "asc" ? "↑" : "↓"}
-                              </span>
-                            )}
-                          </button>
-                        ) : (
-                          flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )
-                        )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
+        <div className="flex-1 min-h-0 overflow-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <p className="text-muted-foreground">Carregando...</p>
+            </div>
+          ) : table.getRowModel().rows.length ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((group) => (
+                    <TableRow key={group.id}>
+                      {group.headers.map((header) => {
+                        const columnDef = header.column
+                          .columnDef as ColumnWithType<TData>;
 
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className={`${getRowClassName?.(row.original) ?? ""} ${
-                    selectedRowId === row.id
-                      ? "bg-blue-50 dark:bg-blue-950"
-                      : ""
-                  } ${
-                    onRowSelect
-                      ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    if (onRowSelect) {
-                      const newSelectedId =
-                        selectedRowId === row.id ? null : row.id;
-                      setSelectedRowId(newSelectedId);
-                      onRowSelect(newSelectedId ? row.original : null);
-                    }
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                        return (
+                          <TableHead key={header.id}>
+                            {columnDef.isOrderable ? (
+                              <button
+                                onClick={handleSortChange}
+                                className="flex items-center gap-2 hover:text-foreground transition-colors"
+                                disabled={isLoading}
+                              >
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                                {sortOrder && (
+                                  <span className="text-xs">
+                                    {sortOrder === "asc" ? "↑" : "↓"}
+                                  </span>
+                                )}
+                              </button>
+                            ) : (
+                              flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )
+                            )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="flex flex-col h-full items-center justify-center py-10 ">
-            <Image src="/Empty.svg" alt="logo" width={200} height={200} />
-            <p className="font-semibold text-xl">Nada por aqui ainda...</p>
-          </div>
-        )}
+                </TableHeader>
+
+                <TableBody>
+                  {table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className={`${getRowClassName?.(row.original) ?? ""} ${
+                        selectedRowId === row.id
+                          ? "bg-blue-50 dark:bg-blue-950"
+                          : ""
+                      } ${
+                        onRowSelect
+                          ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        if (onRowSelect) {
+                          const newSelectedId =
+                            selectedRowId === row.id ? null : row.id;
+                          setSelectedRowId(newSelectedId);
+                          onRowSelect(newSelectedId ? row.original : null);
+                        }
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full items-center justify-center py-10 ">
+              <Image src="/Empty.svg" alt="logo" width={200} height={200} />
+              <p className="font-semibold text-xl">Nada por aqui ainda...</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 my-5">
+      <div className="flex items-center justify-center gap-2 my-3 md:my-5 px-2">
         {/* Anterior */}
         <Button
           variant="default"
@@ -348,7 +352,7 @@ export function DataTable<TData>({
         </Button>
 
         {/* Página atual */}
-        <span className="flex h-8 min-w-8 items-center justify-center rounded-md bg-black px-3 text-sm font-medium text-white">
+        <span className="flex h-8 min-w-8 items-center justify-center rounded-md bg-black px-3 text-xs md:text-sm font-medium text-white">
           {pageIndex + 1} / {totalPages}
         </span>
 

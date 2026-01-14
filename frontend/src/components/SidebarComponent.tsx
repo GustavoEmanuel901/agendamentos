@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
@@ -43,6 +44,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   items,
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const { clearUser } = useUser();
 
@@ -63,7 +65,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   }, [selectedItem]);
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="offcanvas">
       <SidebarHeader className="p-4">
         <Image src="/Group.svg" alt="logo" width={40} height={40} />
       </SidebarHeader>
@@ -90,6 +92,10 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                         e.preventDefault();
                         if (onSelect) onSelect(item.title);
                         if (selectedItem === undefined) setSelected(item.title);
+                        // Fechar sidebar em mobile após selecionar item
+                        if (isMobile) {
+                          setOpenMobile(false);
+                        }
                       }}
                       className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
                         isSelected

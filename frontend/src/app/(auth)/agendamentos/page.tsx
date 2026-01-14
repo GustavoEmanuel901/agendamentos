@@ -52,6 +52,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { apiError } from "@/utils/apiError";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -66,13 +67,13 @@ const Agendamentos = () => {
     totalPages: 1,
   });
   const [filters, setFilters] = useState({
-    pesquisa: "",
-    data: "",
+    search: "",
+    filterDate: "",
   });
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [roomSearchEdit, setRoomSearchEdit] = useState("");
-  const [timeRange, setTimeRange] = useState({ inicio: "", fim: "" });
+  const [timeRange, setTimeRange] = useState({ start: "", end: "" });
   const [timeBlocks, setTimeBlocks] = useState<TimeBlocks[]>([]);
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<string[]>([]);
   //const [selectedStatus, setSelectedStatus] = useState("");
@@ -86,8 +87,8 @@ const Agendamentos = () => {
       getAppointmentColumns(
         () =>
           fetchAppointments({
-            pesquisa: filters.pesquisa,
-            data: filters.data,
+            search: filters.search,
+            filterDate: filters.filterDate,
             page: pagination.page + 1,
           }),
         user?.is_admin
@@ -99,8 +100,8 @@ const Agendamentos = () => {
     () =>
       getClientColumns(() =>
         fetchClients({
-          pesquisa: filters.pesquisa,
-          data: filters.data,
+          search: filters.search,
+          filterDate: filters.filterDate,
           page: pagination.page + 1,
         })
       ),
@@ -116,25 +117,24 @@ const Agendamentos = () => {
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      data: "",
-      horario: "",
-      sala_id: 0,
+      date: "",
+      time: "",
+      room_id: "",
     },
   });
 
   const {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
-    control: controlEdit,
     formState: { errors: errorsEdit, isSubmitting: isSubmittingEdit },
     reset: resetEdit,
     setValue: setValueEdit,
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
     defaultValues: {
-      horario_inicio: "",
-      horario_fim: "",
-      nome: "",
+      start_time: "",
+      end_time: "",
+      name: "",
     },
   });
 
@@ -143,19 +143,17 @@ const Agendamentos = () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
-      if (newFilters?.data) params.append("data", newFilters.data);
-      if (newFilters?.ordenacao)
-        params.append("ordenacao", newFilters.ordenacao);
-      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
+      if (newFilters?.search) params.append("search", newFilters.search);
+      if (newFilters?.filterDate)
+        params.append("filterDate", newFilters.filterDate);
+      if (newFilters?.order) params.append("order", newFilters.order);
+      if (newFilters?.sort) params.append("sort", newFilters.sort);
       params.append("page", String(newFilters?.page ?? 1));
-      params.append("limit", "10");
+      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Appointment>>(
         `/appointments?${params.toString()}`
       );
-
-      console.log("Agendamentos carregados:", response.data);
 
       setAppointments(response.data.data);
       setPagination({
@@ -176,13 +174,13 @@ const Agendamentos = () => {
       console.log("Fetching logs with filters:", newFilters);
 
       const params = new URLSearchParams();
-      if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
-      if (newFilters?.data) params.append("data", newFilters.data);
-      if (newFilters?.ordenacao)
-        params.append("ordenacao", newFilters.ordenacao);
-      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
-      params.append("pagina", String(newFilters?.page ?? 1));
-      params.append("limite", "10");
+      if (newFilters?.search) params.append("search", newFilters.search);
+      if (newFilters?.filterDate)
+        params.append("filterDate", newFilters.filterDate);
+      if (newFilters?.order) params.append("order", newFilters.order);
+      if (newFilters?.sort) params.append("sort", newFilters.sort);
+      params.append("page", String(newFilters?.page ?? 1));
+      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Log>>(
         `/logs?${params.toString()}`
@@ -193,10 +191,8 @@ const Agendamentos = () => {
         page: response.data.meta.page - 1,
         totalPages: response.data.meta.total_pages,
       });
-
-      console.log(response.data);
     } catch (error) {
-      console.error("Erro ao buscar logs:", error);
+      apiError(error, "Erro ao buscar logs");
     } finally {
       setIsLoading(false);
     }
@@ -207,18 +203,14 @@ const Agendamentos = () => {
     setRoomsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (searchTerm) {
-        params.append("pesquisa", searchTerm);
-      }
+      if (searchTerm) params.append("search", searchTerm);
 
       const url = searchTerm ? `/rooms?${params.toString()}` : `/rooms`;
       const response = await api.get<Room[]>(url);
 
-      console.log("Serviços carregados:", response.data);
-
       setRooms(response.data);
     } catch (e) {
-      console.error("Erro ao buscar serviços:", e);
+      apiError(e, "Erro ao buscar salas");
     } finally {
       setRoomsLoading(false);
     }
@@ -231,93 +223,77 @@ const Agendamentos = () => {
       const response = await api.get(`/timeblocks`);
       setTimeBlocks(response.data);
 
-      console.log("Time blocks carregados:", response.data);
-      console.log("IDs pré-selecionados:", preselectedIds);
-
       // Se foram fornecidos IDs pré-selecionados, usar eles
-      if (preselectedIds && preselectedIds.length > 0) {
+      if (preselectedIds && preselectedIds.length > 0)
         setSelectedTimeBlocks(preselectedIds);
-        console.log("TimeBlocks selecionados definidos:", preselectedIds);
-      } else {
-        // Caso contrário, nenhum bloco selecionado
-        setSelectedTimeBlocks([]);
-      }
+      // Caso contrário, nenhum bloco selecionado
+      else setSelectedTimeBlocks([]);
     } catch (error) {
-      console.error("Erro ao buscar opções de status:", error);
+      apiError(error, "Erro ao buscar blocos de horário");
     } finally {
       setLoadingTimeBlocks(false);
     }
   };
   // Buscar detalhes do agendamento (nome da sala e horários)
-  const fetchAppointmentDetails = async (appointmentId: string) => {
-    try {
-      const response = await api.get(`/appointments/${appointmentId}`);
-      const data = response.data;
+  // const fetchAppointmentDetails = async (appointmentId: string) => {
+  //   try {
+  //     const response = await api.get(`/appointments/${appointmentId}`);
+  //     const data = response.data;
 
-      // Preencher o formulário com os dados da API
-      if (data.room?.nome) {
-        setRoomSearchEdit(data.room.nome);
-        setValueEdit("nome", data.room.nome);
-      }
+  //     // Preencher o formulário com os dados da API
+  //     if (data.room?.nome) {
+  //       setRoomSearchEdit(data.room.nome);
+  //       setValueEdit("nome", data.room.nome);
+  //     }
 
-      if (data.horario_inicio) {
-        setTimeRange((prev) => ({ ...prev, inicio: data.horario_inicio }));
-        setValueEdit("horario_inicio", data.horario_inicio);
-      }
+  //     if (data.horario_inicio) {
+  //       setTimeRange((prev) => ({ ...prev, inicio: data.horario_inicio }));
+  //       setValueEdit("horario_inicio", data.horario_inicio);
+  //     }
 
-      if (data.horario_fim) {
-        setTimeRange((prev) => ({ ...prev, fim: data.horario_fim }));
-        setValueEdit("horario_fim", data.horario_fim);
-      }
+  //     if (data.horario_fim) {
+  //       setTimeRange((prev) => ({ ...prev, fim: data.horario_fim }));
+  //       setValueEdit("horario_fim", data.horario_fim);
+  //     }
 
-      console.log("Detalhes do agendamento carregados:", data);
-    } catch (error) {
-      console.error("Erro ao buscar detalhes do agendamento:", error);
-      toast.error("Erro ao carregar detalhes do agendamento");
-    }
-  };
+  //     console.log("Detalhes do agendamento carregados:", data);
+  //   } catch (error) {
+  //     console.error("Erro ao buscar detalhes do agendamento:", error);
+  //     toast.error("Erro ao carregar detalhes do agendamento");
+  //   }
+  // };
   // Buscar detalhes da sala
   const fetchRoomDetail = async (roomId: string) => {
     try {
       const response = await api.get(`/room/${roomId}`);
       const data = response.data;
 
-      console.log("Room detail data:", data);
-
       // Preencher o formulário com os dados da API
-      if (data.nome) {
-        setRoomSearchEdit(data.nome);
-        setValueEdit("nome", data.nome);
+      if (data.name) {
+        setRoomSearchEdit(data.name);
+        setValueEdit("name", data.name);
       }
 
-      if (data.horario_inicio) {
-        setTimeRange((prev) => ({ ...prev, inicio: data.horario_inicio }));
-        setValueEdit("horario_inicio", data.horario_inicio);
+      if (data.start_time) {
+        setTimeRange((prev) => ({ ...prev, inicio: data.start_time }));
+        setValueEdit("start_time", data.start_time);
       }
 
-      if (data.horario_fim) {
-        setTimeRange((prev) => ({ ...prev, fim: data.horario_fim }));
-        setValueEdit("horario_fim", data.horario_fim);
+      if (data.end_time) {
+        setTimeRange((prev) => ({ ...prev, fim: data.end_time }));
+        setValueEdit("end_time", data.end_time);
       }
 
-      console.log("Room detail timeblocks:", data.timeBlocks);
       // Buscar time_blocks e pré-selecionar os que pertencem a essa sala
-      if (data.timeBlocks && data.timeBlocks.length > 0) {
-        console.log("");
-        const timeblockIds = data.timeBlocks.map((tb: TimeBlocks) => tb.id);
-        console.log("TimeBlocks associados à sala:", data.timeBlocks);
-        console.log("IDs dos TimeBlocks da sala:", timeblockIds);
+      if (data.time_blocks && data.time_blocks.length > 0) {
+        const timeblockIds = data.time_blocks.map((tb: TimeBlocks) => tb.id);
 
-        console.log("TimeBlocks da sala:", timeblockIds);
         await fetchTimeBlocks(timeblockIds);
       } else {
         await fetchTimeBlocks();
       }
-
-      console.log("Detalhes da sala carregados:", data);
     } catch (error) {
-      console.error("Erro ao buscar detalhes da sala:", error);
-      toast.error("Erro ao carregar detalhes da sala");
+      apiError(error, "Erro ao buscar detalhes da sala");
     }
   };
 
@@ -326,19 +302,17 @@ const Agendamentos = () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (newFilters?.pesquisa) params.append("pesquisa", newFilters.pesquisa);
-      if (newFilters?.data) params.append("data", newFilters.data);
-      if (newFilters?.ordenacao)
-        params.append("ordenacao", newFilters.ordenacao);
-      if (newFilters?.ordem) params.append("ordem", newFilters.ordem);
+      if (newFilters?.search) params.append("search", newFilters.search);
+      if (newFilters?.filterDate)
+        params.append("filterDate", newFilters.filterDate);
+      if (newFilters?.order) params.append("order", newFilters.order);
+      if (newFilters?.sort) params.append("sort", newFilters.sort);
       params.append("page", String(newFilters?.page ?? 1));
-      params.append("limit", "10");
+      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Client>>(
         `/users/clients?${params.toString()}`
       );
-
-      console.log("Clientes carregados:", response.data);
 
       setClients(response.data.data);
       setPagination({
@@ -346,7 +320,7 @@ const Agendamentos = () => {
         totalPages: response.data.meta.total_pages,
       });
     } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
+      apiError(error, "Erro ao buscar clientes");
     } finally {
       setIsLoading(false);
     }
@@ -355,16 +329,16 @@ const Agendamentos = () => {
   // Submeter agendamento
   const onSubmit = async (data: AppointmentFormData) => {
     try {
-      await api.post("/appointments", data);
+      await api.post("/appointments", {
+        ...data,
+        room_id: Number(data.room_id),
+      });
 
       reset();
       fetchAppointments();
-
-      console.log("Agendamento criado com sucesso");
-
       toast.success("Agendamento criado com sucesso!");
     } catch (error) {
-      console.error("Erro ao criar agendamento:", error);
+      apiError(error, "Erro ao criar agendamento");
     }
   };
 
@@ -375,27 +349,26 @@ const Agendamentos = () => {
     try {
       // selectedTimeBlocks já contém os IDs corretos dos time_blocks
       const newRoom = await api.post(`/room/${selectedAppointment.room.id}`, {
-        nome: data.nome,
-        horario_inicio: data.horario_inicio,
-        horario_fim: data.horario_fim,
+        name: data.name,
+        start_time: data.start_time,
+        end_time: data.end_time,
         time_blocks: selectedTimeBlocks,
       });
 
       await api.put(`/appointments/${selectedAppointment.id}`, {
-        sala_id: newRoom.data.id,
+        room_id: newRoom.data.id,
       });
 
       resetEdit();
       setSelectedAppointment(null);
       setRoomSearchEdit("");
-      setTimeRange({ inicio: "", fim: "" });
+      setTimeRange({ start: "", end: "" });
       setSelectedTimeBlocks([]);
       fetchAppointments();
 
       toast.success("Agendamento atualizado com sucesso!");
     } catch (error) {
-      console.error("Erro ao atualizar agendamento:", error);
-      toast.error("Erro ao atualizar agendamento");
+      apiError(error, "Erro ao atualizar agendamento");
     }
   };
 
@@ -403,7 +376,7 @@ const Agendamentos = () => {
   const handleResetForm = () => {
     resetEdit();
     setRoomSearchEdit("");
-    setTimeRange({ inicio: "", fim: "" });
+    setTimeRange({ start: "", end: "" });
   };
 
   // Alternar seleção de time blocks
@@ -417,26 +390,21 @@ const Agendamentos = () => {
   };
 
   // Buscar salas com debounce
-  const debouncedFetchRooms = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (searchTerm: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          fetchRooms(searchTerm);
-        }, 300); // 300ms de delay
-      };
-    })(),
-    []
-  );
+  const debouncedFetchRooms = useCallback((searchTerm: string) => {
+    const timeoutId = setTimeout(() => {
+      fetchRooms(searchTerm);
+    }, 300); // 300ms de delay
 
-  const verifyPermissionLog = () => {
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  const verifyPermissionLog = useCallback(() => {
     return user?.permissions.logs ?? false;
-  };
+  }, [user]);
 
-  const verifyPermissionAppointments = () => {
+  const verifyPermissionAppointments = useCallback(() => {
     return user?.permissions.appointments ?? false;
-  };
+  }, [user]);
 
   const sidebarItems = useMemo(() => {
     return items.map((item) => {
@@ -448,20 +416,18 @@ const Agendamentos = () => {
       }
       return item;
     });
-  }, [user]);
+  }, [verifyPermissionLog, verifyPermissionAppointments]);
 
   // Preencher formulário de edição quando um agendamento for selecionado
   useEffect(() => {
     if (selectedAppointment) {
       setRoomSearchEdit("");
-      setTimeRange({ inicio: "", fim: "" });
+      setTimeRange({ start: "", end: "" });
       setSelectedTimeBlocks([]);
-      console.log("Selected appointment changed:", selectedAppointment);
-
       // Buscar detalhes da sala (que internamente já busca os time_blocks)
       fetchRoomDetail(selectedAppointment.room.id);
     }
-  }, [selectedAppointment]);
+  }, [selectedAppointment, fetchRoomDetail]);
 
   useEffect(() => {
     // Carregar dados ao mudar de aba
@@ -477,16 +443,14 @@ const Agendamentos = () => {
     console.log(user);
   }, [user, router, selectedItem]);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <SidebarProvider>
-      <div className="flex flex-row flex-1 h-screen">
+      <div className="flex flex-col md:flex-row flex-1 h-screen bg-white">
         <SidebarComponent
           items={sidebarItems}
-          name={user.name || "Usuário"}
+          name={user.name}
           type={
             user.is_admin
               ? SidebarItemTipoEnum.Admin
@@ -495,11 +459,12 @@ const Agendamentos = () => {
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
         />
-        <SidebarInset className="flex flex-col flex-1 min-h-0 w-full bg-white">
+        <SidebarInset className="flex flex-col flex-1 min-h-0 w-full bg-white overflow-auto">
           {selectedItem === "Agendamentos" && (
             <DashboardScreen
-              title="Agendamentos"
-              subtitle="Gerencie seus agendamentos"
+              title="Agendamento"
+              subtitle="Acompanhe todos seus agendamentos de forma mais simples"
+              placeholderInput="Filtre por nome"
               data={appointments}
               columns={columnsAppointment}
               showActionButton={true}
@@ -508,14 +473,13 @@ const Agendamentos = () => {
               totalPages={pagination.totalPages}
               onFilterChange={(newFilters) => {
                 setFilters({
-                  pesquisa: newFilters.pesquisa ?? "",
-                  data: newFilters.data ?? "",
+                  search: newFilters.search ?? "",
+                  filterDate: newFilters.filterDate ?? "",
                 });
                 fetchAppointments(newFilters);
               }}
               onRowSelect={(row) => {
                 setSelectedAppointment(row);
-                console.log("Agendamento selecionado:", row);
               }}
               getRowClassName={(row) => {
                 const status = String(
@@ -551,7 +515,7 @@ const Agendamentos = () => {
                             onChange={(e) => {
                               const value = e.target.value;
                               setRoomSearchEdit(value);
-                              setValueEdit("nome", value);
+                              setValueEdit("name", value);
                               // Buscar salas no backend com debounce
                               if (value.length > 0) {
                                 debouncedFetchRooms(value);
@@ -564,7 +528,7 @@ const Agendamentos = () => {
                           {rooms.length > 0 &&
                             roomSearchEdit &&
                             !rooms.some(
-                              (room) => room.nome === roomSearchEdit
+                              (room) => room.name === roomSearchEdit
                             ) && (
                               <div className="border rounded-md max-h-40 overflow-y-auto">
                                 {rooms.map((room) => (
@@ -572,21 +536,21 @@ const Agendamentos = () => {
                                     key={room.id}
                                     className="px-3 py-2 hover:bg-gray-100 cursor-pointer transition-colors"
                                     onClick={() => {
-                                      setRoomSearchEdit(room.nome);
-                                      setValueEdit("nome", room.nome);
+                                      setRoomSearchEdit(room.name);
+                                      setValueEdit("name", room.name);
                                       // Buscar detalhes da sala (inclui time_blocks)
                                       fetchRoomDetail(room.id);
                                     }}
                                   >
-                                    {room.nome}
+                                    {room.name}
                                   </div>
                                 ))}
                               </div>
                             )}
-                          <input type="hidden" {...registerEdit("nome")} />
-                          {errorsEdit.nome && (
+                          <input type="hidden" {...registerEdit("name")} />
+                          {errorsEdit.name && (
                             <span className="text-red-600 text-sm">
-                              {errorsEdit.nome.message}
+                              {errorsEdit.name.message}
                             </span>
                           )}
                         </div>
@@ -596,16 +560,13 @@ const Agendamentos = () => {
                             <div className="flex-1">
                               <Input
                                 type="time"
-                                value={timeRange.inicio}
+                                value={timeRange.start}
                                 onChange={(e) => {
                                   setTimeRange({
                                     ...timeRange,
-                                    inicio: e.target.value,
+                                    start: e.target.value,
                                   });
-                                  setValueEdit(
-                                    "horario_inicio",
-                                    e.target.value
-                                  );
+                                  setValueEdit("start_time", e.target.value);
                                 }}
                                 placeholder="Início"
                               />
@@ -614,13 +575,13 @@ const Agendamentos = () => {
                             <div className="flex-1">
                               <Input
                                 type="time"
-                                value={timeRange.fim}
+                                value={timeRange.end}
                                 onChange={(e) => {
                                   setTimeRange({
                                     ...timeRange,
-                                    fim: e.target.value,
+                                    end: e.target.value,
                                   });
-                                  setValueEdit("horario_fim", e.target.value);
+                                  setValueEdit("end_time", e.target.value);
                                 }}
                                 placeholder="Fim"
                               />
@@ -628,17 +589,13 @@ const Agendamentos = () => {
                           </div>
                           <input
                             type="hidden"
-                            {...registerEdit("horario_inicio")}
+                            {...registerEdit("start_time")}
                           />
-                          <input
-                            type="hidden"
-                            {...registerEdit("horario_fim")}
-                          />
-                          {(errorsEdit.horario_inicio ||
-                            errorsEdit.horario_fim) && (
+                          <input type="hidden" {...registerEdit("end_time")} />
+                          {(errorsEdit.start_time || errorsEdit.end_time) && (
                             <span className="text-red-600 text-sm">
-                              {errorsEdit.horario_inicio?.message ||
-                                errorsEdit.horario_fim?.message}
+                              {errorsEdit.start_time?.message ||
+                                errorsEdit.end_time?.message}
                             </span>
                           )}
                         </div>
@@ -685,7 +642,7 @@ const Agendamentos = () => {
                                         }
                                       />
                                       <span className="flex-1 text-sm">
-                                        {timeblock.minutos} minutos
+                                        {timeblock.minutes} minutos
                                       </span>
                                     </div>
                                   ))
@@ -724,30 +681,30 @@ const Agendamentos = () => {
                   <div className="grid gap-4">
                     <div className="grid gap-3">
                       <Label htmlFor="date">Data</Label>
-                      <Input id="date" type="date" {...register("data")} />
-                      {errors.data && (
+                      <Input id="date" type="date" {...register("date")} />
+                      {errors.date && (
                         <span className="text-red-600 text-sm">
-                          {errors.data.message}
+                          {errors.date.message}
                         </span>
                       )}
                     </div>
                     <div className="grid gap-3">
                       <Label htmlFor="time">Horário</Label>
-                      <Input id="time" type="time" {...register("horario")} />
-                      {errors.horario && (
+                      <Input id="time" type="time" {...register("time")} />
+                      {errors.time && (
                         <span className="text-red-600 text-sm">
-                          {errors.horario.message}
+                          {errors.time.message}
                         </span>
                       )}
                     </div>
                     <div className="grid gap-3 ">
                       <Label>Sala</Label>
                       <Controller
-                        name="sala_id"
+                        name="room_id"
                         control={control}
                         render={({ field }) => (
                           <Select
-                            value={field.value}
+                            value={String(field.value)}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger className="w-full">
@@ -767,7 +724,7 @@ const Agendamentos = () => {
                               ) : (rooms ?? []).length ? (
                                 (rooms ?? []).map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
-                                    {s.nome}
+                                    {s.name}
                                   </SelectItem>
                                 ))
                               ) : (
@@ -779,9 +736,9 @@ const Agendamentos = () => {
                           </Select>
                         )}
                       />
-                      {errors.sala_id && (
+                      {errors.room_id && (
                         <span className="text-red-600 text-sm">
-                          {errors.sala_id.message}
+                          {errors.room_id.message}
                         </span>
                       )}
                     </div>
@@ -801,8 +758,8 @@ const Agendamentos = () => {
               totalPages={pagination.totalPages}
               onFilterChange={(newFilters) => {
                 setFilters({
-                  pesquisa: newFilters.pesquisa ?? "",
-                  data: newFilters.data ?? "",
+                  search: newFilters.search ?? "",
+                  filterDate: newFilters.filterDate ?? "",
                 });
 
                 fetchClients(newFilters);
@@ -812,16 +769,17 @@ const Agendamentos = () => {
           {selectedItem === "Logs" && (
             <DashboardScreen
               title="Logs"
-              subtitle="Visualize os logs do sistema"
+              subtitle="Acompanhe todas as suas logs"
               data={logs}
               columns={logColumns}
               isLoading={isLoading}
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
+              placeholderInput="Filtre por tipo de atividade ou módulo"
               onFilterChange={(newFilters) => {
                 setFilters({
-                  pesquisa: newFilters.pesquisa ?? "",
-                  data: newFilters.data ?? "",
+                  search: newFilters.search ?? "",
+                  filterDate: newFilters.filterDate ?? "",
                 });
 
                 fetchLogs(newFilters);
@@ -832,7 +790,7 @@ const Agendamentos = () => {
             <>
               <HeaderTable
                 title="Minha Conta"
-                subtitle="Ajuste as informações da sua conta de forma mais simples"
+                subtitle="Ajuste informações da sua conta de forma mais simples"
               />
               <UserForm type="edit" />
             </>

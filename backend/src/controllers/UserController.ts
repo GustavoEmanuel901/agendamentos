@@ -41,6 +41,14 @@ export default class UserController {
         state: data.state,
       });
 
+      const logController = new LogController();
+
+      logController.create({
+        description: `Usuário criado`,
+        module: "Minha Conta",
+        user_id: Number(req.userId),
+      });
+
       const token = generateToken({
         id: user.dataValues.id,
         isAdmin: user.dataValues.admin,

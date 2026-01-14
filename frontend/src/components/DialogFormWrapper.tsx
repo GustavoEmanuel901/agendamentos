@@ -25,14 +25,16 @@ export default function DialogFormWrapper({
   isSubmitting,
   title,
   buttonName,
-  buttonSubmitName
+  buttonSubmitName,
 }: DialogFormWrapperProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default">{buttonName}</Button>
+        <Button variant="default" className="text-sm md:text-base">
+          {buttonName}
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={onSubmit}>
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>

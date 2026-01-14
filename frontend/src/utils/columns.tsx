@@ -17,7 +17,7 @@ export const getAppointmentColumns = (
     isOrderable: true,
     type: "normal",
     accessorFn: (row) => {
-      const date = new Date(row.data_agendamento);
+      const date = new Date(row.date_appointment);
       return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString(
         "pt-BR"
       )}`;
@@ -26,10 +26,11 @@ export const getAppointmentColumns = (
   {
     accessorKey: "user",
     header: "Nome",
-    type: "conjunto",
+    type: "object",
+    objectKeys: ["name", "type"],
   },
   {
-    accessorKey: "room.nome",
+    accessorKey: "room.name",
     header: "Sala do agendamento",
     type: "badge",
     variant: "default",
@@ -61,8 +62,6 @@ export const getAppointmentColumns = (
     type: "action",
 
     cell: ({ row }) => {
-      console.log("Row data:", row.original);
-
       const style =
         row.original.status === "agendado" && isAdmin
           ? "items-center justify-center"
@@ -126,27 +125,28 @@ export const logColumns: Columns<Log>[] = [
   {
     accessorKey: "user",
     header: "Cliente",
-    type: "conjunto",
+    type: "object",
+    objectKeys: ["name", "type"],
   },
   {
-    accessorKey: "descricao",
+    accessorKey: "description",
     header: "Tipo de Atividade",
     type: "badge",
     variant: "secondary",
   },
   {
-    accessorKey: "modulo",
+    accessorKey: "module",
     header: "Módulo",
     type: "badge",
     variant: "secondary",
   },
   {
-    accessorKey: "data_criacao",
+    accessorKey: "created_at",
     header: "Data/Hora",
     type: "badge",
     isOrderable: true,
     accessorFn: (row) => {
-      const date = new Date(row.data_criacao);
+      const date = new Date(row.created_at);
       return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString(
         "pt-BR"
       )}`;
@@ -158,12 +158,12 @@ export const getClientColumns = (
   onPermissionToggle?: () => void
 ): Columns<Client>[] => [
   {
-    accessorKey: "data_criacao",
+    accessorKey: "created_at",
     header: "Data de Cadastro",
     type: "normal",
     isOrderable: true,
     accessorFn: (row) => {
-      const date = new Date(row.data_criacao);
+      const date = new Date(row.created_at);
       return `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString(
         "pt-BR"
       )}`;
@@ -172,26 +172,29 @@ export const getClientColumns = (
   {
     accessorKey: "user",
     header: "Nome",
-    type: "conjunto",
+    type: "object",
+    objectKeys: ["name", "type"],
   },
   {
-    accessorKey: "endereco",
+    accessorKey: "address",
     header: "Endereço",
     type: "normal",
   },
   {
-    accessorKey: "permissoes",
+    accessorKey: "permissions",
     header: "Permissões",
     type: "action",
     cell: ({ row }) => (
       <div className="flex gap-2">
         <Badge
-          variant={row.original.permissoes.agendamentos ? "default" : "outline"}
+          variant={
+            row.original.permissions.appointments ? "default" : "outline"
+          }
           className="cursor-pointer hover:opacity-80 transition-opacity"
           onClick={async () => {
             try {
               await api.put(`/user/${row.original.user.id}/permission`, {
-                agendamentos: !row.original.permissoes.agendamentos,
+                appointments: !row.original.permissions.appointments,
               });
               toast.success("Permissão atualizada com sucesso!");
               onPermissionToggle?.();
@@ -204,12 +207,12 @@ export const getClientColumns = (
           Agendamentos
         </Badge>
         <Badge
-          variant={row.original.permissoes.logs ? "default" : "outline"}
+          variant={row.original.permissions.logs ? "default" : "outline"}
           className="cursor-pointer hover:opacity-80 transition-opacity"
           onClick={async () => {
             try {
               await api.put(`/user/${row.original.user.id}/permission`, {
-                logs: !row.original.permissoes.logs,
+                logs: !row.original.permissions.logs,
               });
               toast.success("Permissão atualizada com sucesso!");
               onPermissionToggle?.();
