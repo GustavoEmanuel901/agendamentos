@@ -8,13 +8,13 @@ import { useUser } from "@/contexts/userContext";
 
 import { useState, useEffect } from "react";
 import { useForm, SubmitHandler, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-import { toast } from "sonner";
+import { loginSchema } from "@/schemas/login.schema";
+import { apiError } from "@/utils/apiError";
 
-interface LoginFormData {
-  email: string;
-  senha: string;
-}
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface FormLoginProps {
   disableShowPasswordField?: boolean;
@@ -27,7 +27,6 @@ const FormLogin = ({
 }: FormLoginProps) => {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [emailIsValid, setEmailIsValid] = useState(false);
-  const [error, setError] = useState("");
 
   const { setUser } = useUser();
 
@@ -41,10 +40,11 @@ const FormLogin = ({
     trigger,
     clearErrors,
   } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
     mode: "onChange",
     defaultValues: {
       email: "",
-      senha: "",
+      password: "",
     },
   });
 
@@ -86,7 +86,7 @@ const FormLogin = ({
         else if (!isValid && showPasswordField) {
           setShowPasswordField(false);
           // Limpa o campo de senha quando o email é inválido
-          clearErrors("senha");
+          clearErrors("password");
         }
       }
     };
@@ -103,31 +103,16 @@ const FormLogin = ({
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     try {
       const response = await api.post("/login", data);
-
-      console.log("Login bem sucedido:", response.data);
-
-      console.log(response.data);
-
       setUser({
-        nome: response.data.nome,
-        role: response.data.role,
+        name: response.data.name,
+        is_admin: response.data.is_admin,
         permissions: response.data.permissions,
         id: response.data.id,
       });
 
-      //toast.success("Login realizado com sucesso!");
-
       router.replace("/agendamentos");
-
-      // eslint-disable-next-line
-    } catch (err: any) {
-      console.log("Erro no login:", err);
-
-      if (err.status == 500) toast.error("Erro no servidor");
-      else if (err.response?.data?.error) toast.error(err.response.data.error);
-      else toast.error("Erro ao fazer login");
-
-      setError(err.mensagem || "Erro desconhecido");
+    } catch (err: unknown) {
+      apiError(err, "Erro ao fazer login.");
     }
   };
 
@@ -140,13 +125,6 @@ const FormLogin = ({
             label="E-mail"
             name="email"
             register={register}
-            validation={{
-              required: "E-mail é obrigatório",
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "E-mail inválido",
-              },
-            }}
             required
             error={errors.email}
           />
@@ -156,18 +134,11 @@ const FormLogin = ({
               <Input
                 type="password"
                 label="Senha de acesso"
-                name="senha"
+                name="password"
                 register={register}
-                validation={{
-                  required: "Senha é obrigatória",
-                  minLength: {
-                    value: 6,
-                    message: "A senha deve ter pelo menos 6 caracteres",
-                  },
-                }}
                 required
                 placeholder="***********"
-                error={errors.senha}
+                error={errors.password}
                 showPasswordToggle={true}
               />
             </div>
@@ -204,7 +175,7 @@ const FormLogin = ({
               </p>
               <Link
                 href="/cadastro"
-                className="inline-block font-semibold text-black-600 hover:text-black-800 transition duration-200 text-sm"
+                className="inline-block font-semibold text-black-600 hover:text-black-800 transition duration-200 text-sm underline"
               >
                 Cadastre-se
               </Link>

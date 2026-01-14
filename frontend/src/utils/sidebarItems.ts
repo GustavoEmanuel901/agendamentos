@@ -1,29 +1,35 @@
 import { SidebarItemProps } from "@/components/SidebarComponent";
 import { CalendarRange, ListCheck, User, Users } from "lucide-react";
 
+export enum SidebarItemTipoEnum {
+  Admin = "Admin",
+  Cliente = "Cliente",
+  Global = "Global",
+}
+
 export const items = [
   {
     title: "Agendamentos",
     url: "#",
     icon: CalendarRange,
-    tipo: "global",
+    type: SidebarItemTipoEnum.Global,
   },
   {
     title: "Clientes",
     url: "#",
     icon: Users,
-    tipo: "admin",
+    type: SidebarItemTipoEnum.Admin,
   },
   {
     title: "Logs",
     url: "#",
     icon: ListCheck,
-    tipo: "global",
+    type: SidebarItemTipoEnum.Global,
   },
   {
     title: "Minha Conta",
     url: "#",
     icon: User,
-    tipo: "cliente",
+    type: SidebarItemTipoEnum.Cliente,
   },
 ] as SidebarItemProps[];

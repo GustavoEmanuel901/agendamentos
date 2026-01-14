@@ -23,7 +23,7 @@ class User extends Model {
         zip_code: DataTypes.STRING,
         address: DataTypes.STRING,
         number: DataTypes.STRING,
-        complement: DataTypes.STRING,
+        supplement: DataTypes.STRING,
         neighborhood: DataTypes.STRING,
         city: DataTypes.STRING,
         state: DataTypes.STRING,

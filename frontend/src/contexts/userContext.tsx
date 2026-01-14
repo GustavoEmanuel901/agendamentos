@@ -3,12 +3,12 @@
 import { createContext, useContext, useState } from "react";
 
 export interface User {
-  nome: string;
+  name: string;
   id: number;
-  role: boolean;
+  is_admin: boolean;
   permissions: {
     logs: boolean;
-    appointment: boolean;
+    appointments: boolean;
   };
 }
 

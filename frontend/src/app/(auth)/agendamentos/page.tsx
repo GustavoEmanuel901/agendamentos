@@ -42,7 +42,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import UserForm from "@/components/UserFom";
 import HeaderTable from "@/components/HeaderTable";
-import { items } from "@/utils/sidebarItems";
+import { items, SidebarItemTipoEnum } from "@/utils/sidebarItems";
 import DialogFormWrapper from "@/components/DialogFormWrapper";
 import { RoomFormData, roomSchema } from "@/schemas/room.schema";
 import { Plus, ChevronDown } from "lucide-react";
@@ -90,9 +90,9 @@ const Agendamentos = () => {
             data: filters.data,
             page: pagination.page + 1,
           }),
-        user?.role
+        user?.is_admin
       ),
-    [filters, pagination.page, user?.role]
+    [filters, pagination.page, user?.is_admin]
   );
 
   const columnsClients = useMemo(
@@ -435,7 +435,7 @@ const Agendamentos = () => {
   };
 
   const verifyPermissionAppointments = () => {
-    return user?.permissions.appointment ?? false;
+    return user?.permissions.appointments ?? false;
   };
 
   const sidebarItems = useMemo(() => {
@@ -470,7 +470,7 @@ const Agendamentos = () => {
       fetchRooms();
     } else if (selectedItem === "Logs") {
       fetchLogs();
-    } else if (selectedItem === "Clientes" && user?.role) {
+    } else if (selectedItem === "Clientes" && user?.is_admin) {
       fetchClients();
     }
 
@@ -486,8 +486,12 @@ const Agendamentos = () => {
       <div className="flex flex-row flex-1 h-screen">
         <SidebarComponent
           items={sidebarItems}
-          nome={user.nome || "Usuário"}
-          tipo={user.role ? "admin" : "cliente"}
+          name={user.name || "Usuário"}
+          type={
+            user.is_admin
+              ? SidebarItemTipoEnum.Admin
+              : SidebarItemTipoEnum.Cliente
+          }
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
         />
@@ -526,7 +530,7 @@ const Agendamentos = () => {
                 return "";
               }}
             >
-              {user.role ? (
+              {user.is_admin ? (
                 <>
                   {selectedAppointment && (
                     <DialogFormWrapper

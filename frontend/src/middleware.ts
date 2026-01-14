@@ -9,6 +9,10 @@ export function middleware(req: NextRequest) {
   // Rotas privadas que exigem autenticação
   const isPrivateRoute = pathname.startsWith("/agendamentos");
 
+  // Rotas de autenticação (login/cadastro)
+  const isAuthRoute =
+    pathname === "/" || pathname === "/cadastro" || pathname === "/admin";
+
   // Se for rota privada e não tiver token, redireciona para login
   if (isPrivateRoute && !token) {
     return admin
@@ -16,9 +20,10 @@ export function middleware(req: NextRequest) {
       : NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Se for rota pública (login/cadastro) e tiver token, redireciona para agendamentos
-  if (!isPrivateRoute && token)
+  // Se for rota de autenticação e tiver token, redireciona para agendamentos
+  if (isAuthRoute && token) {
     return NextResponse.redirect(new URL("/agendamentos", req.url));
+  }
 
   return NextResponse.next();
 }

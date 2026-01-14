@@ -18,6 +18,8 @@ export default class ResponseMessages {
   static ROOM_UPDATED_SUCCESSFULLY = "Sala atualizada com sucesso";
   static USER_CREATED_SUCCESSFULLY = "Usuário criado com sucesso";
   static USER_UPDATED_SUCCESSFULLY = "Usuário atualizado com sucesso";
-  static PERMISSIONS_UPDATED_SUCCESSFULLY = "Permissões atualizadas com sucesso";
+  static PERMISSIONS_UPDATED_SUCCESSFULLY =
+    "Permissões atualizadas com sucesso";
   static EMAIL_ALREADY_REGISTERED = "Email já cadastrado";
+  static LOGIN_SUCCESS = "Logado com sucesso";
 }

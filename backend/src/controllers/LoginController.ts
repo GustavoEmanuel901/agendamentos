@@ -4,21 +4,24 @@ import bcrypt from "bcryptjs";
 import generateToken from "../utils/generate_token";
 import LogController from "./LogController";
 import ResponseMessages from "../utils/responseMessages";
+import { loginSchema } from "../schemas/LoginSchema";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
-    const { email, password } = req.body;
-
     try {
+      const payload = loginSchema.parse(req.body);
+
       const user = await User.findOne({
-        where: { email, status: true },
+        where: { email: payload.email, status: true },
       });
 
       if (!user) {
         return res.status(404).send({ error: ResponseMessages.USER_NOT_FOUND });
       }
 
-      if (!(await bcrypt.compare(password, user.dataValues.password_hash))) {
+      if (
+        !(await bcrypt.compare(payload.password, user.dataValues.password_hash))
+      ) {
         return res
           .status(404)
           .send({ error: ResponseMessages.INCORRECT_PASSWORD });
@@ -59,16 +62,17 @@ export default class LoginController {
         })
         .status(200)
         .json({
-          user_id: user.dataValues.id,
-          role: user.dataValues.admin,
-          nome: user.dataValues.name,
+          id: user.dataValues.id,
+          is_admin: user.dataValues.admin,
+          name: user.dataValues.name,
           permissions: {
             logs: user.dataValues.permission_logs,
-            appointment: user.dataValues.permission_appointments,
+            appointments: user.dataValues.permission_appointments,
           },
-          message: "Logado com sucesso",
+          message: ResponseMessages.LOGIN_SUCCESS,
         });
     } catch (error) {
+      console.error(error);
       return res
         .status(500)
         .send({ error: ResponseMessages.INTERNAL_SERVER_ERROR });

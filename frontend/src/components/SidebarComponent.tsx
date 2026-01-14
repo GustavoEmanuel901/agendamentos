@@ -15,48 +15,44 @@ import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import api from "@/services/api";
 import { useUser } from "@/contexts/userContext";
-import { toast } from "sonner";
+import { SidebarItemTipoEnum } from "@/utils/sidebarItems";
+import { apiError } from "@/utils/apiError";
 
 export interface SidebarItemProps {
   title: string;
   url: string;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>;
-  tipo: "admin" | "cliente" | "global";
+  type: SidebarItemTipoEnum;
   verifyPermission?: () => boolean;
 }
 
 interface SidebarProps {
-  nome: string;
+  name: string;
   items: SidebarItemProps[];
-  tipo: "admin" | "cliente";
+  type: SidebarItemTipoEnum;
   selectedItem?: string;
   onSelect?: (title: string) => void;
 }
 
 const SidebarComponent: React.FC<SidebarProps> = ({
-  nome,
-  tipo,
+  name,
+  type,
   selectedItem,
   onSelect,
   items,
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
 
-
   const { clearUser } = useUser();
 
   const logout = async () => {
-    // Implement logout functionality here
-
     try {
       await api.get("/logout");
 
       clearUser();
-
-      // router.replace("/");
-    } catch (error) {
-      toast.error("Erro ao fazer logout." + error);
+    } catch (error: unknown) {
+      apiError(error, "Erro ao fazer logout.");
     }
   };
 
@@ -76,7 +72,10 @@ const SidebarComponent: React.FC<SidebarProps> = ({
       <SidebarContent>
         <SidebarMenu className="p-4">
           {items
-            .filter((item) => item.tipo === "global" || item.tipo === tipo)
+            .filter(
+              (item) =>
+                item.type === SidebarItemTipoEnum.Global || item.type === type
+            )
             .filter((item) =>
               item.verifyPermission ? item.verifyPermission() : true
             )
@@ -112,8 +111,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({
 
       <SidebarFooter className="flex flex-row items-center justify-between">
         <div className="flex flex-col items-start justify-start">
-          <p>{nome}</p>
-          <p>{tipo}</p>
+          <p>{name}</p>
+          <p>{type}</p>
         </div>
 
         <div>

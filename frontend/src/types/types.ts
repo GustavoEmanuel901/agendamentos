@@ -87,4 +87,12 @@ export interface TimeBlocks {
   minutos: number;
 }
 
+export interface ApiError {
+  status: number;
+  response: {
+    data: {
+      error: string;
+    };
+  };
+}
 // Vou ter que criar types para cada tabela ou mandar do backend já pronto?

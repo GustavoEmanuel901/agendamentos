@@ -35,7 +35,7 @@ export default class UserController {
         zip_code: data.zip_code,
         address: data.address,
         number: data.number,
-        complement: data.complement,
+        supplement: data.supplement,
         neighborhood: data.neighborhood,
         city: data.city,
         state: data.state,
@@ -170,7 +170,7 @@ export default class UserController {
           logs: user.dataValues.permission_logs,
         },
         created_at: user.dataValues.created_at,
-        address: `${user.dataValues.address}, ${user.dataValues.number} - ${user.dataValues.complement} - ${user.dataValues.neighborhood} - ${user.dataValues.city}/${user.dataValues.state}`,
+        address: `${user.dataValues.address}, ${user.dataValues.number} - ${user.dataValues.supplement} - ${user.dataValues.neighborhood} - ${user.dataValues.city}/${user.dataValues.state}`,
         status: user.dataValues.status,
       }));
 
