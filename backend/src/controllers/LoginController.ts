@@ -3,10 +3,11 @@ import User from "../models/User";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generate_token";
 import LogController from "./LogController";
+import ResponseMessages from "../utils/responseMessages";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
-    const { email, senha } = req.body;
+    const { email, password } = req.body;
 
     try {
       const user = await User.findOne({
@@ -14,27 +15,29 @@ export default class LoginController {
       });
 
       if (!user) {
-        return res.status(400).send({ error: "Usuário não encontrado" });
+        return res.status(404).send({ error: ResponseMessages.USER_NOT_FOUND });
       }
 
-      if (!(await bcrypt.compare(senha, user.dataValues.senha_hash))) {
-        return res.status(400).send({ error: "Senha incorreta" });
+      if (!(await bcrypt.compare(password, user.dataValues.password_hash))) {
+        return res
+          .status(404)
+          .send({ error: ResponseMessages.INCORRECT_PASSWORD });
       }
 
       const token = generateToken({
         id: user.dataValues.id,
-        role: user.dataValues.admin,
+        isAdmin: user.dataValues.admin,
         permissions: {
-          logs: user.dataValues.permissao_logs,
-          appointment: user.dataValues.permissao_agendamento,
+          logs: user.dataValues.permission_logs,
+          appointments: user.dataValues.permission_appointments,
         },
       });
 
       const logController = new LogController();
 
       logController.create({
-        descricao: `Usuário realizou login.`,
-        modulo: "Minha Conta",
+        description: `Usuário realizou login.`,
+        module: "Minha Conta",
         user_id: user.dataValues.id,
       });
 
@@ -58,15 +61,17 @@ export default class LoginController {
         .json({
           user_id: user.dataValues.id,
           role: user.dataValues.admin,
-          nome: user.dataValues.nome,
+          nome: user.dataValues.name,
           permissions: {
-            logs: user.dataValues.permissao_logs,
-            appointment: user.dataValues.permissao_agendamento,
+            logs: user.dataValues.permission_logs,
+            appointment: user.dataValues.permission_appointments,
           },
           message: "Logado com sucesso",
         });
     } catch (error) {
-      return res.status(400).send({ error: "Login failed, try again" });
+      return res
+        .status(500)
+        .send({ error: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -75,8 +80,8 @@ export default class LoginController {
       const logController = new LogController();
 
       logController.create({
-        descricao: `Usuário realizou logout.`,
-        modulo: "Minha Conta",
+        description: `Usuário realizou logout.`,
+        module: "Minha Conta",
         user_id: Number(req.userId),
       });
 
@@ -89,9 +94,11 @@ export default class LoginController {
           sameSite: isProd ? "none" : "lax",
         })
         .status(200)
-        .json({ message: "Logout realizado com sucesso" });
+        .json({ message: ResponseMessages.LOGOUT_SUCCESS });
     } catch (error) {
-      return res.status(400).send({ error: "Logout failed" });
+      return res
+        .status(500)
+        .send({ error: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 }

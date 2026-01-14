@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from "express";
+import ErrorMessage from "../utils/responseMessages";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.role) {
-    return res
-      .status(403)
-      .json({ message: "Somente admins podem fazer essa operação" });
-  }
+  if (!req.isAdmin)
+    return res.status(403).json({ message: ErrorMessage.ACCESS_DENIED });
 
   next();
 };

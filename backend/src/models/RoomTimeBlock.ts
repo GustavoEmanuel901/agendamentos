@@ -14,8 +14,8 @@ class RoomTimeBlock extends Model {
         sequelize,
         tableName: "room_time_blocks",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }

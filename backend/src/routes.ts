@@ -10,6 +10,8 @@ import LogController from "./controllers/LogController";
 import RoomController from "./controllers/RoomController";
 import TimeBlockController from "./controllers/TimeBlockController";
 import auth from "./middlewares/auth";
+import permissionAppointments from "./middlewares/permission_appointments";
+import permissionLogs from "./middlewares/permission_logs";
 import LoginController from "./controllers/LoginController";
 import admin from "./middlewares/admin";
 
@@ -20,36 +22,67 @@ const logController = new LogController();
 const roomController = new RoomController();
 const timeBlockController = new TimeBlockController();
 
+
+// LOGIN ROUTES
 routes.post("/login", loginController.login);
 routes.get("/logout", auth, loginController.logout);
 
+// USER ROUTES
 routes.post("/user", userController.createUser);
 routes.get("/users/clients", auth, admin, userController.getClients);
 routes.get("/user/:id", auth, userController.getOne);
 routes.put("/user/:id", auth, userController.updateUser);
 routes.get("/profile", auth, userController.getProfile);
-
 routes.put(
-  "/user/:id/permission",
+"/user/:id/permission",
   auth,
   admin,
   userController.alterUserPermissions
 );
 
-routes.get("/appointments", auth, appointmentControler.list);
-routes.get("/appointment/user/:id", auth, appointmentControler.list);
-routes.post("/appointments", auth, appointmentControler.create);
-routes.put("/appointments/:id", auth, appointmentControler.update);
+// APPOINTMENT ROUTES
+routes.get(
+  "/appointments",
+  auth,
+  permissionAppointments,
+  appointmentControler.list
+);
+routes.get(
+  "/appointment/user/:id",
+  auth,
+  permissionAppointments,
+  appointmentControler.list
+);
+routes.post(
+  "/appointments",
+  auth,
+  permissionAppointments,
+  appointmentControler.create
+);
+routes.put(
+  "/appointments/:id",
+  auth,
+  permissionAppointments,
+  appointmentControler.update
+);
 
-routes.get("/logs", auth, logController.list);
-routes.get("/logs", auth, logController.list);
-routes.get("/logs/user/:id", auth, logController.list);
+// LOG ROUTES
+
+routes.get("/logs", auth, permissionLogs, logController.list);
+
+// ROOM ROUTES
 
 routes.get("/rooms", auth, roomController.list);
 routes.get("/room/:id", auth, admin, roomController.getOne);
 routes.post("/room/:id", auth, admin, roomController.createOrUpdate);
+// routes.get(
+//   "/room/:roomId/timeblocks",
+//   auth,
+//   admin,
+//   timeBlockController.listByRoom
+// );
 
-routes.get("/room/:roomId/timeblocks", auth, admin, timeBlockController.listByRoom);
+// TIME BLOCK ROUTES
 routes.get("/timeblocks", auth, admin, timeBlockController.getAll);
 
 export default routes;

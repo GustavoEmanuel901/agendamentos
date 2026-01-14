@@ -4,26 +4,29 @@ import Room from "../models/Room";
 import LogController from "./LogController";
 import z from "zod";
 import RoomTimeBlocksController from "./RoomTimeBlocksController";
+import ResponseMessages from "../utils/responseMessages";
+import { RoomCreateOrUpdateSchema } from "../schemas/roomSchemas";
+import { GetFilteres } from "../@types/filter";
 
 export default class RoomController {
   async list(req: Request, res: Response) {
     try {
-      const { pesquisa = "" } = req.query as { pesquisa?: string };
+      const { search = "" } = req.query as GetFilteres;
 
       const where: any = {};
 
-      if (pesquisa) where.nome = { [Op.like]: `%${pesquisa}%` };
-
+      if (search) where.name = { [Op.like]: `%${search}%` };
       const rooms = await Room.findAll({
         where,
-        attributes: ["id", "nome"],
-        order: [["nome", "ASC"]],
+        attributes: ["id", "name"],
+        order: [["name", "ASC"]],
       });
 
       return res.json(rooms);
     } catch (error) {
-      console.error("Erro ao listar salas:", error);
-      return res.status(500).json({ message: "Erro ao listar salas" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -35,9 +38,16 @@ export default class RoomController {
         include: ["timeBlocks"],
       });
 
+      if (!room)
+        return res
+          .status(404)
+          .json({ message: ResponseMessages.ROOM_NOT_FOUND });
+
       return res.json(room);
     } catch {
-      return res.status(500).json({ message: "Erro ao recuperar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -45,24 +55,7 @@ export default class RoomController {
     try {
       const { id } = req.params;
 
-      const updateSchema = z.object({
-        nome: z.string().min(2).optional(),
-        horario_inicio: z
-          .string()
-          .regex(
-            /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-            "Horário deve estar no formato HH:MM:SS"
-          ),
-        horario_fim: z
-          .string()
-          .regex(
-            /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-            "Horário deve estar no formato HH:MM:SS"
-          ),
-        time_blocks: z.array(z.number()).optional(),
-      });
-
-      const payload = updateSchema.parse(req.body);
+      const payload = RoomCreateOrUpdateSchema.parse(req.body);
 
       const room = await Room.findByPk(id);
 
@@ -71,7 +64,7 @@ export default class RoomController {
 
       const roomWithSameName = await Room.findOne({
         where: {
-          nome: payload.nome,
+          name: payload.name,
         },
       });
 
@@ -83,8 +76,8 @@ export default class RoomController {
         const logController = new LogController();
 
         await logController.create({
-          descricao: "Sala Criada",
-          modulo: "Salas",
+          description: "Sala Criada",
+          module: "Salas",
           user_id: Number(req.userId),
         });
 
@@ -97,7 +90,7 @@ export default class RoomController {
 
         return res.json({
           data: roomCreated,
-          message: "Sala Criada com sucesso",
+          message: ResponseMessages.ROOM_CREATED_SUCCESSFULLY,
         });
       }
 
@@ -114,22 +107,27 @@ export default class RoomController {
       }
 
       await logController.create({
-        descricao: "Sala Alterada",
-        modulo: "Salas",
+        description: "Sala Alterada",
+        module: "Salas",
         user_id: Number(req.userId),
       });
 
       return res.json({
         data: roomUpdated,
-        message: "Sala atualizada com sucesso",
+        message: ResponseMessages.ROOM_UPDATED_SUCCESSFULLY,
       });
     } catch (err: any) {
       if (err instanceof z.ZodError)
         return res
           .status(400)
-          .json({ message: "Erro de validação", errors: err.message });
+          .json({
+            message: ResponseMessages.VALIDATION_ERROR,
+            errors: err.message,
+          });
       console.error(err);
-      return res.status(500).json({ message: "Erro ao atualizar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 }

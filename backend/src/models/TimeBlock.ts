@@ -15,8 +15,8 @@ class TimeBlock extends Model {
         sequelize,
         tableName: "time_blocks",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }

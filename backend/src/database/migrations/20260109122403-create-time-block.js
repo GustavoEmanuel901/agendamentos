@@ -5,16 +5,16 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       autoIncrement: true,
     },
-    minutos: {
+    minutes: {
       type: Sequelize.INTEGER,
       allowNull: false,
     },
-    data_criacao: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    data_atualizacao: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),

@@ -8,7 +8,6 @@ export default class RoomTimeBlocksController {
       );
       await Promise.all(createPromises);
     } catch (error) {
-      console.error("Erro ao criar RoomTimeBlocks:", error);
       throw error;
     }
   }
@@ -17,7 +16,6 @@ export default class RoomTimeBlocksController {
     try {
       await RoomTimeBlock.destroy({ where: { room_id: roomId } });
     } catch (error) {
-      console.error("Erro ao deletar RoomTimeBlocks:", error);
       throw error;
     }
   }

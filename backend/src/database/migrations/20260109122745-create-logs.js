@@ -5,11 +5,11 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       autoIncrement: true,
     },
-    descricao: {
+    description: {
       type: Sequelize.STRING,
       allowNull: false,
     },
-    modulo: {
+    module: {
       type: Sequelize.STRING,
       allowNull: false,
     },
@@ -23,12 +23,12 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: "CASCADE",
       onDelete: "CASCADE",
     },
-    data_criacao: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    data_atualizacao: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),

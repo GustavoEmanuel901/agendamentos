@@ -1,4 +1,4 @@
-import { ListarDto } from "../dtos/UserDtos";
+import { GetFilteres } from "../@types/filter";
 import User from "../models/User";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
@@ -6,57 +6,47 @@ import { z } from "zod";
 import { Op } from "sequelize";
 import LogController from "./LogController";
 import generateToken from "../utils/generate_token";
-import { permission } from "node:process";
+import {
+  userCreateSchema,
+  userPermissionsUpdateSchema,
+  userUpdateSchema,
+} from "../schemas/UserSchemas";
+import ResponseMessages from "../utils/responseMessages";
 
 export default class UserController {
   async createUser(req: Request, res: Response) {
     try {
-      const userCreateSchema = z.object({
-        nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-        sobrenome: z
-          .string()
-          .min(2, "Sobrenome deve ter pelo menos 2 caracteres"),
-        email: z.string().email("Email inválido"),
-        senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-        cep: z.string().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
-        endereco: z.string().optional(),
-        numero: z.string().optional(),
-        complemento: z.string().optional(),
-        bairro: z.string().optional(),
-        cidade: z.string().optional(),
-        estado: z.string().optional(),
-      });
-
       const data = userCreateSchema.parse(req.body);
 
-      console.log("Dados validados:", data);
       const userExists = await User.findOne({ where: { email: data.email } });
 
       if (userExists)
-        return res.status(400).json({ message: "Email já cadastrado" });
+        return res
+          .status(400)
+          .json({ message: ResponseMessages.EMAIL_ALREADY_REGISTERED });
 
-      const password_hash = await bcrypt.hash(data.senha, 8);
+      const password_hash = await bcrypt.hash(data.password, 8);
 
       const user = await User.create({
-        nome: data.nome,
-        sobrenome: data.sobrenome,
+        name: data.name,
+        last_name: data.last_name,
         email: data.email,
-        senha_hash: password_hash,
-        cep: data.cep,
-        endereco: data.endereco,
-        numero: data.numero,
-        complemento: data.complemento,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        estado: data.estado,
+        password_hash: password_hash,
+        zip_code: data.zip_code,
+        address: data.address,
+        number: data.number,
+        complement: data.complement,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
       });
 
       const token = generateToken({
         id: user.dataValues.id,
-        role: user.dataValues.admin,
+        isAdmin: user.dataValues.admin,
         permissions: {
-          logs: user.dataValues.permissao_logs,
-          appointment: user.dataValues.permissao_agendamento,
+          logs: user.dataValues.permission_logs,
+          appointments: user.dataValues.permission_appointments,
         },
       });
 
@@ -77,24 +67,25 @@ export default class UserController {
           maxAge: 1000 * 60 * 60 * 24, // 1 dia
         })
         .json({
-          message: "Usuário criado com sucesso",
+          message: ResponseMessages.USER_CREATED_SUCCESSFULLY,
           id: user.dataValues.id,
-          nome: user.dataValues.nome,
-          role: user.dataValues.admin,
+          name: user.dataValues.name,
+          is_admin: user.dataValues.admin,
           permissions: {
-            logs: user.dataValues.permissao_logs,
-            appointment: user.dataValues.permissao_agendamento,
+            logs: user.dataValues.permission_logs,
+            appointment: user.dataValues.permission_appointments,
           },
         });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          message: "Erro de validação",
+          message: ResponseMessages.VALIDATION_ERROR,
           errors: error.message,
         });
       }
-      console.error("Erro ao criar usuário:", error);
-      return res.status(500).json({ message: "Erro ao criar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -102,54 +93,56 @@ export default class UserController {
     try {
       const id = req.userId;
 
-      console.log("Recuperando perfil do usuário ID:", id);
-
       const user = await User.findByPk(id);
 
       if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res
+          .status(404)
+          .json({ message: ResponseMessages.USER_NOT_FOUND });
 
       return res.json({
         id: user.dataValues.id,
-        nome: user.dataValues.nome,
-        sobrenome: user.dataValues.sobrenome,
+        name: user.dataValues.name,
+        last_name: user.dataValues.last_name,
         permissions: {
-          logs: user.dataValues.permissao_logs,
-          appointment: user.dataValues.permissao_agendamento,
+          logs: user.dataValues.permission_logs,
+          appointment: user.dataValues.permission_appointments,
         },
-        role: user.dataValues.admin,
+        is_admin: user.dataValues.admin,
       });
     } catch {
-      return res.status(500).json({ message: "Erro ao recuperar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
   async getClients(req: Request, res: Response) {
     try {
       const {
-        pagina = "1",
-        limite = "10",
-        pesquisa,
-        data,
-        ordem,
-        ordenacao,
-      } = req.query as Partial<ListarDto>;
-      const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
-      const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
+        page = "1",
+        limit = "10",
+        search,
+        filterDate,
+        order,
+        sort,
+      } = req.query as Partial<GetFilteres>;
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const perPageNum = Math.max(1, parseInt(limit, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
 
       const where: any = { admin: false };
 
-      if (pesquisa) {
-        const like = `%${pesquisa}%`;
+      if (search) {
+        const like = `%${search}%`;
         where[Op.or] = [
-          { nome: { [Op.like]: like } },
-          { sobrenome: { [Op.like]: like } },
+          { name: { [Op.like]: like } },
+          { last_name: { [Op.like]: like } },
         ];
       }
 
-      if (data) {
-        const d = new Date(data);
+      if (filterDate) {
+        const d = new Date(filterDate);
         if (!isNaN(d.getTime())) {
           const start = new Date(d);
           start.setHours(0, 0, 0, 0);
@@ -163,22 +156,21 @@ export default class UserController {
         where,
         limit: perPageNum,
         offset,
-        order: [[ordenacao || "data_criacao", ordem || "DESC"]],
+        order: [[sort || "data_criacao", order || "DESC"]],
       });
 
       const clients = rows.map((user) => ({
         user: {
           id: user.dataValues.id,
-
-          nome: `${user.dataValues.nome} ${user.dataValues.sobrenome}`,
-          tipo: user.dataValues.admin ? "admin" : "cliente",
+          name: `${user.dataValues.name} ${user.dataValues.last_name}`,
+          type: user.dataValues.admin ? "Admin" : "Cliente",
         },
-        permissoes: {
-          agendamentos: user.dataValues.permissao_agendamento,
-          logs: user.dataValues.permissao_logs,
+        permissions: {
+          appointments: user.dataValues.permission_appointments,
+          logs: user.dataValues.permission_logs,
         },
-        data_criacao: user.dataValues.data_criacao,
-        endereco: `${user.dataValues.endereco}, ${user.dataValues.numero} - ${user.dataValues.complemento} - ${user.dataValues.bairro} - ${user.dataValues.cidade}/${user.dataValues.estado}`,
+        created_at: user.dataValues.created_at,
+        address: `${user.dataValues.address}, ${user.dataValues.number} - ${user.dataValues.complement} - ${user.dataValues.neighborhood} - ${user.dataValues.city}/${user.dataValues.state}`,
         status: user.dataValues.status,
       }));
 
@@ -201,14 +193,20 @@ export default class UserController {
     try {
       const { id } = req.params;
 
-      const user = await User.findByPk(id);
+      const user = await User.findByPk(id, {
+        attributes: { exclude: ["password_hash"] },
+      });
 
       if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res
+          .status(404)
+          .json({ message: ResponseMessages.USER_NOT_FOUND });
 
       return res.json(user);
     } catch {
-      return res.status(500).json({ message: "Erro ao recuperar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -216,102 +214,78 @@ export default class UserController {
     try {
       const { id } = req.params;
 
-      const updateSchema = z.object({
-        nome: z.string().min(2).optional(),
-        sobrenome: z.string().min(2).optional(),
-        email: z.string().email().optional(),
-        senha: z.string().min(6).optional(),
-        cep: z
-          .string()
-          .regex(/^\d{5}-?\d{3}$/)
-          .optional(),
-        endereco: z.string().optional(),
-        numero: z.string().optional(),
-        complemento: z.string().optional(),
-        bairro: z.string().optional(),
-        cidade: z.string().optional(),
-        estado: z.string().optional(),
-      });
-
-      const payload = updateSchema.parse(req.body);
+      const payload = userUpdateSchema.parse(req.body);
 
       const user = await User.findByPk(id);
       if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res
+          .status(404)
+          .json({ message: ResponseMessages.USER_NOT_FOUND });
 
       if (payload.email && payload.email !== user.getDataValue("email")) {
         const exists = await User.findOne({ where: { email: payload.email } });
         if (exists)
-          return res.status(400).json({ message: "Email já cadastrado" });
+          return res
+            .status(400)
+            .json({ message: ResponseMessages.EMAIL_ALREADY_REGISTERED });
       }
 
-      const updateData: any = { ...payload };
-
-      if (payload.senha) {
-        const hash = await bcrypt.hash(payload.senha, 8);
-        updateData.senha_hash = hash;
-        delete updateData.senha;
-      }
-
-      await user.update(updateData);
+      await user.update(payload);
 
       const logController = new LogController();
 
       await logController.create({
-        descricao: "Usuário Alterado",
-        modulo: "Minha Conta",
+        description: "Usuário Alterado",
+        module: "Minha Conta",
         user_id: Number(req.userId),
       });
 
-      return res.json({ message: "Usuário atualizado com sucesso" });
+      return res.json({ message: ResponseMessages.USER_UPDATED_SUCCESSFULLY });
     } catch (err: any) {
       if (err instanceof z.ZodError)
-        return res
-          .status(400)
-          .json({ message: "Erro de validação", errors: err.message });
+        return res.status(400).json({
+          message: ResponseMessages.VALIDATION_ERROR,
+          errors: err.message,
+        });
       console.error(err);
-      return res.status(500).json({ message: "Erro ao atualizar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
   async alterUserPermissions(req: Request, res: Response) {
     try {
-      if (!req.role) {
-        return res
-          .status(401)
-          .json({ message: "Somente admins podem fazer essa alteração" });
-      }
-      const updateSchema = z.object({
-        logs: z.boolean().optional(),
-        agendamentos: z.boolean().optional(),
-        status: z.boolean().optional(),
-      });
-
-      const payload = updateSchema.parse(req.body);
+      const payload = userPermissionsUpdateSchema.parse(req.body);
 
       const { id } = req.params;
 
       const user = await User.findByPk(id);
 
       if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res
+          .status(404)
+          .json({ message: ResponseMessages.USER_NOT_FOUND });
 
       const updateData: any = {};
-      if ("logs" in payload) updateData.permissao_logs = payload.logs;
-      if ("agendamentos" in payload)
-        updateData.permissao_agendamento = payload.agendamentos;
+      if ("logs" in payload) updateData.permission_logs = payload.logs;
+      if ("appointments" in payload)
+        updateData.permission_appointments = payload.appointments;
       if ("status" in payload) updateData.status = payload.status;
 
       await user.update(updateData);
 
-      return res.json({ message: "Usuário atualizado com sucesso" });
+      return res.json({ message: ResponseMessages.USER_UPDATED_SUCCESSFULLY });
     } catch (err: any) {
       if (err instanceof z.ZodError)
-        return res
-          .status(400)
-          .json({ message: "Erro de validação", errors: err.message });
+        return res.status(400).json({
+          message: ResponseMessages.VALIDATION_ERROR,
+          errors: err.message,
+        });
       console.error(err);
-      return res.status(500).json({ message: "Erro ao atualizar usuário" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 }

@@ -6,10 +6,13 @@ export async function up(queryInterface, Sequelize) {
       autoIncrement: true,
     },
     status: {
-      type: Sequelize.STRING,
+      type: Sequelize.STRING, //ENUM("Cancelado", "Em análise", "Agendado"),
       allowNull: false,
+      // validate: {
+      //   isIn: [["Cancelado", "Em análise", "Agendado"]],
+      // },
     },
-    data_agendamento: {
+    date_appointment: {
       type: Sequelize.DATE,
       allowNull: false,
     },
@@ -33,12 +36,12 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: "NO ACTION",
       onDelete: "CASCADE",
     },
-    data_criacao: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    data_atualizacao: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),

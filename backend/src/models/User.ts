@@ -9,8 +9,8 @@ class User extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        nome: DataTypes.STRING,
-        sobrenome: DataTypes.STRING,
+        name: DataTypes.STRING,
+        last_name: DataTypes.STRING,
         email: {
           type: DataTypes.STRING(255),
           unique: true,
@@ -18,24 +18,24 @@ class User extends Model {
             isEmail: true,
           },
         },
-        senha: DataTypes.VIRTUAL,
-        senha_hash: DataTypes.STRING,
-        cep: DataTypes.STRING,
-        endereco: DataTypes.STRING,
-        numero: DataTypes.STRING,
-        complemento:DataTypes.STRING,
-        bairro: DataTypes.STRING,
-        cidade: DataTypes.STRING,
-        estado: DataTypes.STRING,
+        password: DataTypes.VIRTUAL,
+        password_hash: DataTypes.STRING,
+        zip_code: DataTypes.STRING,
+        address: DataTypes.STRING,
+        number: DataTypes.STRING,
+        complement: DataTypes.STRING,
+        neighborhood: DataTypes.STRING,
+        city: DataTypes.STRING,
+        state: DataTypes.STRING,
         status: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
         },
-        permissao_logs: {
+        permission_logs: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
         },
-        permissao_agendamento: {
+        permission_appointments: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
         },
@@ -48,23 +48,22 @@ class User extends Model {
         sequelize,
         tableName: "users",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }
   static associate(models: any) {
     this.hasMany(models.Log, {
-      foreignKey: 'user_id',
-      as: 'logs'
-    })
+      foreignKey: "user_id",
+      as: "logs",
+    });
 
     this.hasMany(models.Appointment, {
-      foreignKey: 'user_id',
-      as: 'appointments'
-    })
+      foreignKey: "user_id",
+      as: "appointments",
+    });
   }
 }
-
 
 export default User;

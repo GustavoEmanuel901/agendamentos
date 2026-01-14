@@ -9,20 +9,20 @@ class Room extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        nome: {
+        name: {
           type: DataTypes.STRING,
           allowNull: false,
           unique: true,
         },
-        horario_inicio: DataTypes.TIME,
-        horario_fim: DataTypes.TIME,
+        start_time: DataTypes.TIME,
+        end_time: DataTypes.TIME,
       },
       {
         sequelize,
         tableName: "rooms",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }

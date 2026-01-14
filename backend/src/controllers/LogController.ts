@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import Log from "../models/Log";
-import { ListarDto } from "../dtos/UserDtos";
+import { GetFilteres } from "../@types/filter";
 import User from "../models/User";
+import ResponseMessages from "../utils/responseMessages";
 
 interface LogCreate {
-  descricao: string;
-  modulo: string;
+  description: string;
+  module: string;
   user_id: number;
 }
 
@@ -14,46 +15,46 @@ export default class LogController {
   async list(req: Request, res: Response) {
     try {
       if (!req.permissions.logs)
-        return res.status(403).send({ error: "Acesso negado" });
+        return res.status(403).send({ error: ResponseMessages.ACCESS_DENIED });
 
       const {
-        pagina = "1",
-        limite = "10",
-        pesquisa,
-        data,
-        ordem,
-        ordenacao,
-      } = req.query as Partial<ListarDto>;
+        page = "1",
+        limit = "10",
+        search,
+        filterDate,
+        order,
+        sort,
+      } = req.query as Partial<GetFilteres>;
 
       const userId = req.userId;
 
-      const pageNum = Math.max(1, parseInt(pagina, 10) || 1);
-      const perPageNum = Math.max(1, parseInt(limite, 10) || 10);
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const perPageNum = Math.max(1, parseInt(limit, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
 
       const where: any = {};
 
-      if (userId && !req.role) where.user_id = userId;
+      if (userId && !req.isAdmin) where.user_id = userId;
 
-      if (pesquisa) {
-        const like = `%${pesquisa}%`;
+      if (search) {
+        const like = `%${search}%`;
 
         where[Op.or] = [
-          { descricao: { [Op.like]: like } },
-          { modulo: { [Op.like]: like } },
-          { "$user.nome$": { [Op.like]: like } },
-          { "$user.sobrenome$": { [Op.like]: like } },
+          { description: { [Op.like]: like } },
+          { module: { [Op.like]: like } },
+          { "$user.name$": { [Op.like]: like } },
+          { "$user.last_name$": { [Op.like]: like } },
         ];
       }
 
-      if (data) {
-        const d = new Date(data);
+      if (filterDate) {
+        const d = new Date(filterDate);
         if (!isNaN(d.getTime())) {
           const start = new Date(d);
           start.setHours(0, 0, 0, 0);
           const end = new Date(d);
           end.setHours(23, 59, 59, 999);
-          where.data_criacao = { [Op.gte]: start, [Op.lte]: end };
+          where.created_at = { [Op.gte]: start, [Op.lte]: end };
         }
       }
 
@@ -61,19 +62,25 @@ export default class LogController {
         where,
         limit: perPageNum,
         offset,
-        include: [{ model: User, as: "user" }],
-        order: [[ordenacao || "data_criacao", ordem || "DESC"]],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "name", "last_name", "admin"],
+          },
+        ],
+        order: [[order || "created_at", sort || "DESC"]],
       });
 
       const logs = rows.map((log) => ({
         id: log.dataValues.id,
-        descricao: log.dataValues.descricao,
-        modulo: log.dataValues.modulo,
-        data_criacao: log.dataValues.data_criacao,
+        description: log.dataValues.description,
+        module: log.dataValues.module,
+        created_at: log.dataValues.created_at,
         user: {
           id: log.dataValues.user.id,
-          nome: log.dataValues.user.nome + " " + log.dataValues.user.sobrenome,
-          admin: log.dataValues.user.admin ? "admin" : "cliente",
+          name: log.dataValues.user.name + " " + log.dataValues.user.last_name,
+          type: log.dataValues.user.admin ? "Admin" : "Cliente",
         },
       }));
 
@@ -87,21 +94,24 @@ export default class LogController {
         },
       });
     } catch (error) {
-      console.error("Erro ao buscar logs:", error);
-      return res.status(500).json({ message: "Erro ao buscar logs" });
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
   async create(data: LogCreate) {
     try {
       await Log.create({
-        modulo: data.modulo,
-        descricao: data.descricao,
+        module: data.module,
+        description: data.description,
         user_id: data.user_id,
       });
 
       console.log(
-        `[${new Date().toISOString()}] Log: ${data.descricao} no ${data.modulo}`
+        `[${new Date().toISOString()}] Log: ${data.description} no ${
+          data.module
+        }`
       );
     } catch (error: any) {
       console.error("Erro ao criar log:", error);

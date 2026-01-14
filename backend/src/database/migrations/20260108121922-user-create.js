@@ -6,11 +6,11 @@ export async function up(queryInterface, Sequelize) {
       autoIncrement: true,
       allowNull: false,
     },
-    nome: {
+    name: {
       type: Sequelize.STRING(255),
       allowNull: false,
     },
-    sobrenome: {
+    last_name: {
       type: Sequelize.STRING(255),
       allowNull: false,
     },
@@ -18,36 +18,39 @@ export async function up(queryInterface, Sequelize) {
       type: Sequelize.STRING(255),
       allowNull: false,
       unique: true,
+      validate: {
+        isEmail: true,
+      },
     },
-    senha_hash: {
+    password_hash: {
       type: Sequelize.STRING(255),
       allowNull: false,
     },
-    cep: {
+    zip_code: {
       type: Sequelize.STRING(10),
       allowNull: false,
     },
-    endereco: {
+    address: {
       type: Sequelize.STRING(255),
       allowNull: true,
     },
-    numero: {
+    number: {
       type: Sequelize.STRING(20),
       allowNull: true,
     },
-    complemento: {
+    supplement: {
       type: Sequelize.STRING(255),
       allowNull: true,
     },
-    bairro: {
+    neighborhood: {
       type: Sequelize.STRING(255),
       allowNull: true,
     },
-    cidade: {
+    city: {
       type: Sequelize.STRING(255),
       allowNull: true,
     },
-    estado: {
+    state: {
       type: Sequelize.STRING(100),
       allowNull: true,
     },
@@ -60,20 +63,20 @@ export async function up(queryInterface, Sequelize) {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
     },
-    permissao_logs: {
+    permission_logs: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
     },
-    permissao_agendamento: {
+    permission_appointments: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
     },
-    data_criacao: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    data_atualizacao: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),

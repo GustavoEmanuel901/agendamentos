@@ -12,8 +12,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3000", // 👈 frontend
-    credentials: true, // 👈 permite cooki
+    origin: process.env.ORIGIN,
+    credentials: true,
   })
 );
 app.use(routes);

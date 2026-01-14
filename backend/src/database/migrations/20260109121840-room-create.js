@@ -5,25 +5,25 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       autoIncrement: true,
     },
-    nome: {
+    name: {
       type: Sequelize.STRING,
       allowNull: false,
       unique: true,
     },
-    horario_inicio: {
+    start_time: {
       type: Sequelize.TIME,
       allowNull: true,
     },
-    horario_fim: {
+    end_time: {
       type: Sequelize.TIME,
       allowNull: true,
     },
-    data_criacao: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
-    data_atualizacao: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),

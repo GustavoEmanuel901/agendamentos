@@ -1,4 +1,5 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
+import { appointmentStatus } from "../utils/appointmentStatus";
 
 class Appointment extends Model {
   static initialize(sequelize: Sequelize) {
@@ -9,15 +10,21 @@ class Appointment extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        status: DataTypes.STRING,
-        data_agendamento: DataTypes.DATE,
+        status: {
+          type: DataTypes.ENUM(...appointmentStatus),
+          allowNull: false,
+          validate: {
+            isIn: [appointmentStatus],
+          },
+        },
+        date_appointment: DataTypes.DATE,
       },
       {
         sequelize,
         tableName: "appointments",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }

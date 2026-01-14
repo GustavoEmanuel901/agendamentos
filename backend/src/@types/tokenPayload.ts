@@ -2,9 +2,9 @@ import { JwtPayload } from "jsonwebtoken";
 
 export interface TokenPayload extends JwtPayload {
   id: string;
-  role: boolean;
+  isAdmin: boolean;
   permissions: {
     logs: boolean;
-    appointment: boolean;
+    appointments: boolean;
   };
 }

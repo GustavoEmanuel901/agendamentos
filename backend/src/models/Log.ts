@@ -9,15 +9,15 @@ class Log extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        descricao: DataTypes.STRING,
-        modulo: DataTypes.STRING,
+        description: DataTypes.STRING,
+        module: DataTypes.STRING,
       },
       {
         sequelize,
         tableName: "logs",
         timestamps: true,
-        createdAt: "data_criacao",
-        updatedAt: "data_atualizacao",
+        createdAt: "created_at",
+        updatedAt: "updated_at",
       }
     );
   }
