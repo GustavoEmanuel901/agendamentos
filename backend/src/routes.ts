@@ -49,6 +49,7 @@ routes.get("/rooms", auth, roomController.list);
 routes.get("/room/:id", auth, admin, roomController.getOne);
 routes.post("/room/:id", auth, admin, roomController.createOrUpdate);
 
-routes.get("/room/:roomId/timeblocks", auth, timeBlockController.listByRoom);
+routes.get("/room/:roomId/timeblocks", auth, admin, timeBlockController.listByRoom);
+routes.get("/timeblocks", auth, admin, timeBlockController.getAll);
 
 export default routes;

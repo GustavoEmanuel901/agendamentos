@@ -20,6 +20,7 @@ export type Log = {
 export type Room = {
   id: string;
   nome: string;
+  timeblocks: TimeBlocks[];
 };
 
 export type Client = {

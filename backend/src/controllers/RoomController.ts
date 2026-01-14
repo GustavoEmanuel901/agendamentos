@@ -17,7 +17,6 @@ export default class RoomController {
       const rooms = await Room.findAll({
         where,
         attributes: ["id", "nome"],
-        limit: 20,
         order: [["nome", "ASC"]],
       });
 
@@ -60,7 +59,7 @@ export default class RoomController {
             /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
             "Horário deve estar no formato HH:MM:SS"
           ),
-        time_blocks: z.array(z.number()).optional(), 
+        time_blocks: z.array(z.number()).optional(),
       });
 
       const payload = updateSchema.parse(req.body);
@@ -89,14 +88,12 @@ export default class RoomController {
           user_id: Number(req.userId),
         });
 
-
-        if( payload.time_blocks ) {
+        if (payload.time_blocks) {
           await roomTimeBlocksController.create(
             roomCreated.dataValues.id,
-            payload.time_blocks 
+            payload.time_blocks
           );
         }
-        
 
         return res.json({
           data: roomCreated,
@@ -104,15 +101,15 @@ export default class RoomController {
         });
       }
 
-      const roomUpdated = await room.update(payload);
+      const roomUpdated = await roomWithSameName.update(payload);
 
       const logController = new LogController();
 
-      if( payload.time_blocks ) {
-        await roomTimeBlocksController.deleteByRoom(roomUpdated.dataValues.id); 
+      if (payload.time_blocks) {
+        await roomTimeBlocksController.deleteByRoom(roomUpdated.dataValues.id);
         await roomTimeBlocksController.create(
           roomUpdated.dataValues.id,
-          payload.time_blocks 
+          payload.time_blocks
         );
       }
 

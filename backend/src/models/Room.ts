@@ -9,7 +9,11 @@ class Room extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        nome: DataTypes.STRING,
+        nome: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          unique: true,
+        },
         horario_inicio: DataTypes.TIME,
         horario_fim: DataTypes.TIME,
       },

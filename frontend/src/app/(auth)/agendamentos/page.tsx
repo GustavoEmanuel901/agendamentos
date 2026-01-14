@@ -12,7 +12,7 @@ import {
   DataTableFilters,
   TimeBlocks,
 } from "@/types/types";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   getAppointmentColumns,
   getClientColumns,
@@ -74,7 +74,7 @@ const Agendamentos = () => {
   const [roomSearchEdit, setRoomSearchEdit] = useState("");
   const [timeRange, setTimeRange] = useState({ inicio: "", fim: "" });
   const [timeBlocks, setTimeBlocks] = useState<TimeBlocks[]>([]);
-  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<number[]>([]);
+  const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<string[]>([]);
   //const [selectedStatus, setSelectedStatus] = useState("");
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
@@ -203,10 +203,16 @@ const Agendamentos = () => {
   };
 
   // Buscar serviços para o select
-  const fetchRooms = async () => {
+  const fetchRooms = async (searchTerm?: string) => {
     setRoomsLoading(true);
     try {
-      const response = await api.get<Room[]>(`/rooms`);
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append("pesquisa", searchTerm);
+      }
+
+      const url = searchTerm ? `/rooms?${params.toString()}` : `/rooms`;
+      const response = await api.get<Room[]>(url);
 
       console.log("Serviços carregados:", response.data);
 
@@ -219,28 +225,22 @@ const Agendamentos = () => {
   };
 
   // Buscar opções de status do backend (apenas para visualização)
-  const fetchTimeBlocks = async (
-    roomId: string,
-    preselectedIds?: string[]
-  ) => {
+  const fetchTimeBlocks = async (preselectedIds?: string[]) => {
     setLoadingTimeBlocks(true);
     try {
-      const response = await api.get(`/room/${roomId}/timeblocks`);
+      const response = await api.get(`/timeblocks`);
       setTimeBlocks(response.data);
+
+      console.log("Time blocks carregados:", response.data);
+      console.log("IDs pré-selecionados:", preselectedIds);
 
       // Se foram fornecidos IDs pré-selecionados, usar eles
       if (preselectedIds && preselectedIds.length > 0) {
-        const indices = response.data
-          .map((block: TimeBlocks, index: number) =>
-            preselectedIds.includes(block.id) ? index : -1
-          )
-          .filter((index: number) => index !== -1);
-        setSelectedTimeBlocks(indices);
+        setSelectedTimeBlocks(preselectedIds);
+        console.log("TimeBlocks selecionados definidos:", preselectedIds);
       } else {
-        // Caso contrário, pré-selecionar todos os blocos
-        setSelectedTimeBlocks(
-          response.data.map((_: TimeBlocks, index: number) => index)
-        );
+        // Caso contrário, nenhum bloco selecionado
+        setSelectedTimeBlocks([]);
       }
     } catch (error) {
       console.error("Erro ao buscar opções de status:", error);
@@ -282,6 +282,8 @@ const Agendamentos = () => {
       const response = await api.get(`/room/${roomId}`);
       const data = response.data;
 
+      console.log("Room detail data:", data);
+
       // Preencher o formulário com os dados da API
       if (data.nome) {
         setRoomSearchEdit(data.nome);
@@ -298,11 +300,18 @@ const Agendamentos = () => {
         setValueEdit("horario_fim", data.horario_fim);
       }
 
+      console.log("Room detail timeblocks:", data.timeBlocks);
       // Buscar time_blocks e pré-selecionar os que pertencem a essa sala
-      if (data.time_block_ids && data.time_block_ids.length > 0) {
-        await fetchTimeBlocks(roomId, data.time_block_ids);
+      if (data.timeBlocks && data.timeBlocks.length > 0) {
+        console.log("");
+        const timeblockIds = data.timeBlocks.map((tb: TimeBlocks) => tb.id);
+        console.log("TimeBlocks associados à sala:", data.timeBlocks);
+        console.log("IDs dos TimeBlocks da sala:", timeblockIds);
+
+        console.log("TimeBlocks da sala:", timeblockIds);
+        await fetchTimeBlocks(timeblockIds);
       } else {
-        await fetchTimeBlocks(roomId);
+        await fetchTimeBlocks();
       }
 
       console.log("Detalhes da sala carregados:", data);
@@ -364,16 +373,12 @@ const Agendamentos = () => {
     if (!selectedAppointment) return;
 
     try {
-      // Mapear os índices selecionados para os IDs reais dos time_blocks
-      const selectedTimeBlockIds = selectedTimeBlocks.map(
-        (index) => timeBlocks[index].id
-      );
-
+      // selectedTimeBlocks já contém os IDs corretos dos time_blocks
       const newRoom = await api.post(`/room/${selectedAppointment.room.id}`, {
         nome: data.nome,
         horario_inicio: data.horario_inicio,
         horario_fim: data.horario_fim,
-        time_block_ids: selectedTimeBlockIds,
+        time_blocks: selectedTimeBlocks,
       });
 
       await api.put(`/appointments/${selectedAppointment.id}`, {
@@ -402,14 +407,28 @@ const Agendamentos = () => {
   };
 
   // Alternar seleção de time blocks
-  const toggleTimeBlockSelection = (index: number) => {
+  const toggleTimeBlockSelection = (id: string) => {
     setSelectedTimeBlocks((prev) => {
-      if (prev.includes(index)) {
-        return prev.filter((i) => i !== index);
+      if (prev.includes(id)) {
+        return prev.filter((i) => i !== id);
       }
-      return [...prev, index];
+      return [...prev, id];
     });
   };
+
+  // Buscar salas com debounce
+  const debouncedFetchRooms = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (searchTerm: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          fetchRooms(searchTerm);
+        }, 300); // 300ms de delay
+      };
+    })(),
+    []
+  );
 
   const verifyPermissionLog = () => {
     return user?.permissions.logs ?? false;
@@ -430,14 +449,6 @@ const Agendamentos = () => {
       return item;
     });
   }, [user]);
-
-  // Filtrar salas com base na busca
-  const filteredRoomsEdit = useMemo(() => {
-    if (!roomSearchEdit) return rooms;
-    return rooms.filter((room) =>
-      room.nome.toLowerCase().includes(roomSearchEdit.toLowerCase())
-    );
-  }, [rooms, roomSearchEdit]);
 
   // Preencher formulário de edição quando um agendamento for selecionado
   useEffect(() => {
@@ -534,18 +545,25 @@ const Agendamentos = () => {
                             placeholder="Digite para buscar sala..."
                             value={roomSearchEdit}
                             onChange={(e) => {
-                              setRoomSearchEdit(e.target.value);
-                              setValueEdit("nome", e.target.value);
+                              const value = e.target.value;
+                              setRoomSearchEdit(value);
+                              setValueEdit("nome", value);
+                              // Buscar salas no backend com debounce
+                              if (value.length > 0) {
+                                debouncedFetchRooms(value);
+                              } else {
+                                fetchRooms();
+                              }
                             }}
                             className="mb-2"
                           />
-                          {filteredRoomsEdit.length > 0 &&
+                          {rooms.length > 0 &&
                             roomSearchEdit &&
                             !rooms.some(
                               (room) => room.nome === roomSearchEdit
                             ) && (
                               <div className="border rounded-md max-h-40 overflow-y-auto">
-                                {filteredRoomsEdit.map((room) => (
+                                {rooms.map((room) => (
                                   <div
                                     key={room.id}
                                     className="px-3 py-2 hover:bg-gray-100 cursor-pointer transition-colors"
@@ -646,24 +664,24 @@ const Agendamentos = () => {
                                     Carregando...
                                   </div>
                                 ) : timeBlocks.length ? (
-                                  timeBlocks.map((status, index) => (
+                                  timeBlocks.map((timeblock) => (
                                     <div
-                                      key={index}
+                                      key={timeblock.id}
                                       className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
                                       onClick={() =>
-                                        toggleTimeBlockSelection(index)
+                                        toggleTimeBlockSelection(timeblock.id)
                                       }
                                     >
                                       <Checkbox
                                         checked={selectedTimeBlocks.includes(
-                                          index
+                                          timeblock.id
                                         )}
                                         onCheckedChange={() =>
-                                          toggleTimeBlockSelection(index)
+                                          toggleTimeBlockSelection(timeblock.id)
                                         }
                                       />
                                       <span className="flex-1 text-sm">
-                                        {status.minutos} minutos
+                                        {timeblock.minutos} minutos
                                       </span>
                                     </div>
                                   ))

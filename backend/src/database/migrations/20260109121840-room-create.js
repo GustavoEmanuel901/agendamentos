@@ -8,6 +8,7 @@ export async function up(queryInterface, Sequelize) {
     nome: {
       type: Sequelize.STRING,
       allowNull: false,
+      unique: true,
     },
     horario_inicio: {
       type: Sequelize.TIME,

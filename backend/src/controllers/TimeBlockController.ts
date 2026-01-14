@@ -31,4 +31,17 @@ export default class TimeBlockController {
       return res.status(500).json({ message: "Erro ao listar timeblocks" });
     }
   }
+
+  async getAll(req: Request, res: Response) {
+    try {
+      const timeBlocks = await TimeBlock.findAll({
+        attributes: ["id", "minutos"],
+        order: [["minutos", "ASC"]],
+      }); 
+      return res.status(200).json(timeBlocks);
+    } catch (error) {
+      console.error("Erro ao listar todos os timeblocks:", error);
+      return res.status(500).json({ message: "Erro ao listar timeblocks" });
+    }
+  }
 }
