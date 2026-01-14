@@ -14,8 +14,6 @@ interface LogCreate {
 export default class LogController {
   async list(req: Request, res: Response) {
     try {
-      if (!req.permissions.logs)
-        return res.status(403).send({ error: ResponseMessages.ACCESS_DENIED });
 
       const {
         page = "1",

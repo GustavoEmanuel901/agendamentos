@@ -97,9 +97,7 @@ export default class AppointmentControler {
         }
       }
 
-      if (userId && !req.isAdmin) {
-        where.user_id = userId;
-      }
+      if (userId && !req.isAdmin) where.user_id = userId;
 
       const include: any[] = [];
       if (search) {

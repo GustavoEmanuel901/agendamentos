@@ -10,7 +10,7 @@ import {
   userCreateSchema,
   userPermissionsUpdateSchema,
   userUpdateSchema,
-} from "../schemas/UserSchemas";
+} from "../schemas/userSchemas";
 import ResponseMessages from "../utils/responseMessages";
 
 export default class UserController {

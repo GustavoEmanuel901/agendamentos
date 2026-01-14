@@ -12,7 +12,7 @@ import TimeBlock from "../models/TimeBlock";
 export default class RoomController {
   async list(req: Request, res: Response) {
     try {
-      const { search = "" } = req.query as GetFilteres;
+      const { search } = req.query as GetFilteres;
 
       const where: any = {};
 
