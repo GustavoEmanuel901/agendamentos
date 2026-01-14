@@ -37,6 +37,12 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
     },
   });
+  
+  // Adiciona índice único para evitar duplicatas
+  await queryInterface.addIndex("room_time_blocks", ["room_id", "time_block_id"], {
+    unique: true,
+    name: "unique_room_time_block",
+  });
 }
 
 export async function down(queryInterface, Sequelize) {

@@ -219,15 +219,29 @@ const Agendamentos = () => {
   };
 
   // Buscar opções de status do backend (apenas para visualização)
-  const fetchTimeBlocks = async (roomId: string) => {
+  const fetchTimeBlocks = async (
+    roomId: string,
+    preselectedIds?: string[]
+  ) => {
     setLoadingTimeBlocks(true);
     try {
       const response = await api.get(`/room/${roomId}/timeblocks`);
       setTimeBlocks(response.data);
-      // Pré-selecionar todos os blocos ao carregar
-      setSelectedTimeBlocks(
-        response.data.map((_: TimeBlocks, index: number) => index)
-      );
+
+      // Se foram fornecidos IDs pré-selecionados, usar eles
+      if (preselectedIds && preselectedIds.length > 0) {
+        const indices = response.data
+          .map((block: TimeBlocks, index: number) =>
+            preselectedIds.includes(block.id) ? index : -1
+          )
+          .filter((index: number) => index !== -1);
+        setSelectedTimeBlocks(indices);
+      } else {
+        // Caso contrário, pré-selecionar todos os blocos
+        setSelectedTimeBlocks(
+          response.data.map((_: TimeBlocks, index: number) => index)
+        );
+      }
     } catch (error) {
       console.error("Erro ao buscar opções de status:", error);
     } finally {
@@ -262,7 +276,7 @@ const Agendamentos = () => {
       toast.error("Erro ao carregar detalhes do agendamento");
     }
   };
-  // Buscar detalhes do agendamento (nome da sala e horários)
+  // Buscar detalhes da sala
   const fetchRoomDetail = async (roomId: string) => {
     try {
       const response = await api.get(`/room/${roomId}`);
@@ -284,10 +298,17 @@ const Agendamentos = () => {
         setValueEdit("horario_fim", data.horario_fim);
       }
 
-      console.log("Detalhes do agendamento carregados:", data);
+      // Buscar time_blocks e pré-selecionar os que pertencem a essa sala
+      if (data.time_block_ids && data.time_block_ids.length > 0) {
+        await fetchTimeBlocks(roomId, data.time_block_ids);
+      } else {
+        await fetchTimeBlocks(roomId);
+      }
+
+      console.log("Detalhes da sala carregados:", data);
     } catch (error) {
-      console.error("Erro ao buscar detalhes do agendamento:", error);
-      toast.error("Erro ao carregar detalhes do agendamento");
+      console.error("Erro ao buscar detalhes da sala:", error);
+      toast.error("Erro ao carregar detalhes da sala");
     }
   };
 
@@ -343,10 +364,16 @@ const Agendamentos = () => {
     if (!selectedAppointment) return;
 
     try {
+      // Mapear os índices selecionados para os IDs reais dos time_blocks
+      const selectedTimeBlockIds = selectedTimeBlocks.map(
+        (index) => timeBlocks[index].id
+      );
+
       const newRoom = await api.post(`/room/${selectedAppointment.room.id}`, {
         nome: data.nome,
         horario_inicio: data.horario_inicio,
         horario_fim: data.horario_fim,
+        time_block_ids: selectedTimeBlockIds,
       });
 
       await api.put(`/appointments/${selectedAppointment.id}`, {
@@ -357,6 +384,7 @@ const Agendamentos = () => {
       setSelectedAppointment(null);
       setRoomSearchEdit("");
       setTimeRange({ inicio: "", fim: "" });
+      setSelectedTimeBlocks([]);
       fetchAppointments();
 
       toast.success("Agendamento atualizado com sucesso!");
@@ -419,9 +447,8 @@ const Agendamentos = () => {
       setSelectedTimeBlocks([]);
       console.log("Selected appointment changed:", selectedAppointment);
 
-      // Buscar detalhes do agendamento da API
+      // Buscar detalhes da sala (que internamente já busca os time_blocks)
       fetchRoomDetail(selectedAppointment.room.id);
-      fetchTimeBlocks(selectedAppointment.room.id);
     }
   }, [selectedAppointment]);
 
@@ -525,6 +552,8 @@ const Agendamentos = () => {
                                     onClick={() => {
                                       setRoomSearchEdit(room.nome);
                                       setValueEdit("nome", room.nome);
+                                      // Buscar detalhes da sala (inclui time_blocks)
+                                      fetchRoomDetail(room.id);
                                     }}
                                   >
                                     {room.nome}

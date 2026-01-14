@@ -3,6 +3,7 @@ import { Op } from "sequelize";
 import Room from "../models/Room";
 import LogController from "./LogController";
 import z from "zod";
+import RoomTimeBlocksController from "./RoomTimeBlocksController";
 
 export default class RoomController {
   async list(req: Request, res: Response) {
@@ -59,6 +60,7 @@ export default class RoomController {
             /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
             "Horário deve estar no formato HH:MM:SS"
           ),
+        time_blocks: z.array(z.number()).optional(), 
       });
 
       const payload = updateSchema.parse(req.body);
@@ -74,6 +76,8 @@ export default class RoomController {
         },
       });
 
+      const roomTimeBlocksController = new RoomTimeBlocksController();
+
       if (!roomWithSameName) {
         const roomCreated = await Room.create(payload);
 
@@ -85,6 +89,15 @@ export default class RoomController {
           user_id: Number(req.userId),
         });
 
+
+        if( payload.time_blocks ) {
+          await roomTimeBlocksController.create(
+            roomCreated.dataValues.id,
+            payload.time_blocks 
+          );
+        }
+        
+
         return res.json({
           data: roomCreated,
           message: "Sala Criada com sucesso",
@@ -94,6 +107,14 @@ export default class RoomController {
       const roomUpdated = await room.update(payload);
 
       const logController = new LogController();
+
+      if( payload.time_blocks ) {
+        await roomTimeBlocksController.deleteByRoom(roomUpdated.dataValues.id); 
+        await roomTimeBlocksController.create(
+          roomUpdated.dataValues.id,
+          payload.time_blocks 
+        );
+      }
 
       await logController.create({
         descricao: "Sala Alterada",
