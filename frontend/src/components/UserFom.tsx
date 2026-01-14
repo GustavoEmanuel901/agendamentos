@@ -73,7 +73,6 @@ export default function UserForm({ type }: UserFormProps) {
         return null;
       }
 
-      console.log("Endereço encontrado:", data.data);
       return data;
     } catch (error) {
       apiError(error, "Erro ao buscar endereço pelo ZipCode.");

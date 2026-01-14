@@ -12,8 +12,6 @@ export default async function Layout({
 
   const hasToken = cookiesList.has("token");
 
-  console.log("Has token:", hasToken);
-
   if (!hasToken) return redirect("/");
 
   const token = cookiesList.get("token")?.value;

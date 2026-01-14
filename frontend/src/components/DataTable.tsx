@@ -86,9 +86,6 @@ export function DataTable<TData>({
         } as ColumnDef<TData, any>;
       }
 
-      if (col.type === "action") {
-      }
-
       if (col.type === "object") {
         //REVER ESSA PARTE
         return {

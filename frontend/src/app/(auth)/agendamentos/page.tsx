@@ -171,8 +171,6 @@ const Agendamentos = () => {
   const fetchLogs = async (newFilters?: DataTableFilters) => {
     setIsLoading(true);
     try {
-      console.log("Fetching logs with filters:", newFilters);
-
       const params = new URLSearchParams();
       if (newFilters?.search) params.append("search", newFilters.search);
       if (newFilters?.filterDate)
@@ -234,34 +232,7 @@ const Agendamentos = () => {
       setLoadingTimeBlocks(false);
     }
   };
-  // Buscar detalhes do agendamento (nome da sala e horários)
-  // const fetchAppointmentDetails = async (appointmentId: string) => {
-  //   try {
-  //     const response = await api.get(`/appointments/${appointmentId}`);
-  //     const data = response.data;
 
-  //     // Preencher o formulário com os dados da API
-  //     if (data.room?.nome) {
-  //       setRoomSearchEdit(data.room.nome);
-  //       setValueEdit("nome", data.room.nome);
-  //     }
-
-  //     if (data.horario_inicio) {
-  //       setTimeRange((prev) => ({ ...prev, inicio: data.horario_inicio }));
-  //       setValueEdit("horario_inicio", data.horario_inicio);
-  //     }
-
-  //     if (data.horario_fim) {
-  //       setTimeRange((prev) => ({ ...prev, fim: data.horario_fim }));
-  //       setValueEdit("horario_fim", data.horario_fim);
-  //     }
-
-  //     console.log("Detalhes do agendamento carregados:", data);
-  //   } catch (error) {
-  //     console.error("Erro ao buscar detalhes do agendamento:", error);
-  //     toast.error("Erro ao carregar detalhes do agendamento");
-  //   }
-  // };
   // Buscar detalhes da sala
   const fetchRoomDetail = useCallback(
     async (roomId: string) => {
@@ -442,8 +413,6 @@ const Agendamentos = () => {
     } else if (selectedItem === "Clientes" && user?.is_admin) {
       fetchClients();
     }
-
-    console.log(user);
   }, [user, router, selectedItem]);
 
   if (!user) return null;
