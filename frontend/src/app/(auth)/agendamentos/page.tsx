@@ -53,6 +53,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { apiError } from "@/utils/apiError";
+import App from "next/app";
+import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -73,7 +75,7 @@ const Agendamentos = () => {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [roomSearchEdit, setRoomSearchEdit] = useState("");
-  const [timeRange, setTimeRange] = useState({ start: "", end: "" });
+  const [timeRange, setTimeRange] = useState({ start_time: "", end_time: "" });
   const [timeBlocks, setTimeBlocks] = useState<TimeBlocks[]>([]);
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<string[]>([]);
   //const [selectedStatus, setSelectedStatus] = useState("");
@@ -161,7 +163,7 @@ const Agendamentos = () => {
         totalPages: response.data.meta.total_pages,
       });
     } catch (error) {
-      console.error("Erro ao buscar agendamentos:", error);
+      console.log(error);
     } finally {
       setIsLoading(false);
     }
@@ -185,10 +187,10 @@ const Agendamentos = () => {
       );
 
       setLogs(response.data.data);
-      setPagination({
-        page: response.data.meta.page - 1,
-        totalPages: response.data.meta.total_pages,
-      });
+      // setPagination({
+      //   page: response.data.meta.page - 1,
+      //   totalPages: response.data.meta.total_pages,
+      // });
     } catch (error) {
       apiError(error, "Erro ao buscar logs");
     } finally {
@@ -247,12 +249,12 @@ const Agendamentos = () => {
         }
 
         if (data.start_time) {
-          setTimeRange((prev) => ({ ...prev, inicio: data.start_time }));
+          setTimeRange((prev) => ({ ...prev, start_time: data.start_time }));
           setValueEdit("start_time", data.start_time);
         }
 
         if (data.end_time) {
-          setTimeRange((prev) => ({ ...prev, fim: data.end_time }));
+          setTimeRange((prev) => ({ ...prev, end_time: data.end_time }));
           setValueEdit("end_time", data.end_time);
         }
 
@@ -303,10 +305,7 @@ const Agendamentos = () => {
   // Submeter agendamento
   const onSubmit = async (data: AppointmentFormData) => {
     try {
-      await api.post("/appointments", {
-        ...data,
-        room_id: Number(data.room_id),
-      });
+      await api.post("/appointments", data);
 
       reset();
       fetchAppointments();
@@ -318,25 +317,27 @@ const Agendamentos = () => {
 
   // Editar sala/agendamento
   const onSubmitEdit = async (data: RoomFormData) => {
-    if (!selectedAppointment) return;
+    //if (!selectedAppointment) return;
 
     try {
       // selectedTimeBlocks já contém os IDs corretos dos time_blocks
-      const newRoom = await api.post(`/room/${selectedAppointment.room.id}`, {
+      const newRoom = await api.post(`/room`, {
         name: data.name,
         start_time: data.start_time,
         end_time: data.end_time,
         time_blocks: selectedTimeBlocks,
       });
 
-      await api.put(`/appointments/${selectedAppointment.id}`, {
-        room_id: newRoom.data.id,
-      });
+      if (selectedAppointment) {
+        await api.put(`/appointments/${selectedAppointment.id}`, {
+          room_id: newRoom.data.id,
+        });
+      }
 
       resetEdit();
       setSelectedAppointment(null);
       setRoomSearchEdit("");
-      setTimeRange({ start: "", end: "" });
+      setTimeRange({ start_time: "", end_time: "" });
       setSelectedTimeBlocks([]);
       fetchAppointments();
 
@@ -350,7 +351,7 @@ const Agendamentos = () => {
   const handleResetForm = () => {
     resetEdit();
     setRoomSearchEdit("");
-    setTimeRange({ start: "", end: "" });
+    setTimeRange({ start_time: "", end_time: "" });
   };
 
   // Alternar seleção de time blocks
@@ -385,12 +386,12 @@ const Agendamentos = () => {
 
   const sidebarItems = useMemo(() => {
     return items.map((item) => {
-      if (item.title === "Logs") {
+      if (item.title === "Logs")
         return { ...item, verifyPermission: verifyPermissionLog };
-      }
-      if (item.title === "Agendamentos") {
+
+      if (item.title === "Agendamentos")
         return { ...item, verifyPermission: verifyPermissionAppointments };
-      }
+
       return item;
     });
   }, [verifyPermissionLog, verifyPermissionAppointments]);
@@ -399,7 +400,7 @@ const Agendamentos = () => {
   useEffect(() => {
     if (selectedAppointment) {
       setRoomSearchEdit("");
-      setTimeRange({ start: "", end: "" });
+      setTimeRange({ start_time: "", end_time: "" });
       setSelectedTimeBlocks([]);
       // Buscar detalhes da sala (que internamente já busca os time_blocks)
       fetchRoomDetail(selectedAppointment.room.id);
@@ -411,11 +412,10 @@ const Agendamentos = () => {
     if (selectedItem === "Agendamentos") {
       fetchAppointments();
       fetchRooms();
-    } else if (selectedItem === "Logs") {
-      fetchLogs();
-    } else if (selectedItem === "Clientes" && user?.is_admin) {
-      fetchClients();
-    }
+
+      if (user?.is_admin) fetchTimeBlocks();
+    } else if (selectedItem === "Logs") fetchLogs();
+    else if (selectedItem === "Clientes" && user?.is_admin) fetchClients();
   }, [user, router, selectedItem]);
 
   if (!user) return null;
@@ -457,13 +457,11 @@ const Agendamentos = () => {
                 setSelectedAppointment(row);
               }}
               getRowClassName={(row) => {
-                const status = String(
-                  (row as Appointment).status ?? ""
-                ).toLowerCase();
+                const status = String((row as Appointment).status ?? "");
 
-                if (status === "agendado") {
+                if (status === AppointmentStatus.SCHEDULED) {
                   return "bg-green-50 hover:bg-green-100";
-                } else if (status === "cancelado") {
+                } else if (status === AppointmentStatus.CANCELED) {
                   return "bg-red-50 hover:bg-red-100";
                 }
                 return "";
@@ -471,179 +469,173 @@ const Agendamentos = () => {
             >
               {user.is_admin ? (
                 <>
-                  {selectedAppointment && (
-                    <DialogFormWrapper
-                      buttonName="Ajustes de agendamento"
-                      onSubmit={handleSubmitEdit(onSubmitEdit)}
-                      isSubmitting={isSubmittingEdit}
-                      title="Ajustes de agendamento"
-                      buttonSubmitName="Salvar"
-                    >
-                      <div className="grid gap-4">
-                        <div className="grid gap-3">
-                          <Label htmlFor="room-name">Nome da Sala</Label>
-                          <Input
-                            id="room-search"
-                            type="text"
-                            placeholder="Digite para buscar sala..."
-                            value={roomSearchEdit}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setRoomSearchEdit(value);
-                              setValueEdit("name", value);
-                              // Buscar salas no backend com debounce
-                              if (value.length > 0) {
-                                debouncedFetchRooms(value);
-                              } else {
-                                fetchRooms();
-                              }
-                            }}
-                            className="mb-2"
-                          />
-                          {rooms.length > 0 &&
-                            roomSearchEdit &&
-                            !rooms.some(
-                              (room) => room.name === roomSearchEdit
-                            ) && (
-                              <div className="border rounded-md max-h-40 overflow-y-auto">
-                                {rooms.map((room) => (
-                                  <div
-                                    key={room.id}
-                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer transition-colors"
-                                    onClick={() => {
-                                      setRoomSearchEdit(room.name);
-                                      setValueEdit("name", room.name);
-                                      // Buscar detalhes da sala (inclui time_blocks)
-                                      fetchRoomDetail(room.id);
-                                    }}
-                                  >
-                                    {room.name}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          <input type="hidden" {...registerEdit("name")} />
-                          {errorsEdit.name && (
-                            <span className="text-red-600 text-sm">
-                              {errorsEdit.name.message}
-                            </span>
+                  {/* {selectedAppointment && ( */}
+                  <DialogFormWrapper
+                    buttonName="Ajustes de agendamento"
+                    onSubmit={handleSubmitEdit(onSubmitEdit)}
+                    isSubmitting={isSubmittingEdit}
+                    title="Ajustes de agendamento"
+                    buttonSubmitName="Salvar"
+                  >
+                    <div className="grid gap-4 mt-4">
+                      <div className="grid gap-3">
+                        <Label htmlFor="room-name">Nome da Sala</Label>
+                        <Input
+                          id="room-search"
+                          type="text"
+                          placeholder="Digite para buscar sala..."
+                          value={roomSearchEdit}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setRoomSearchEdit(value);
+                            setValueEdit("name", value);
+                            // Buscar salas no backend com debounce
+                            if (value.length > 0) {
+                              debouncedFetchRooms(value);
+                            } else {
+                              fetchRooms();
+                            }
+                          }}
+                          className="mb-2"
+                        />
+                        {rooms.length > 0 &&
+                          roomSearchEdit &&
+                          !rooms.some(
+                            (room) => room.name === roomSearchEdit
+                          ) && (
+                            <div className="border rounded-md max-h-40 overflow-y-auto">
+                              {rooms.map((room) => (
+                                <div
+                                  key={room.id}
+                                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer transition-colors"
+                                  onClick={() => {
+                                    setRoomSearchEdit(room.name);
+                                    setValueEdit("name", room.name);
+                                    // Buscar detalhes da sala (inclui time_blocks)
+                                    if (user.is_admin) fetchRoomDetail(room.id);
+                                  }}
+                                >
+                                  {room.name}
+                                </div>
+                              ))}
+                            </div>
                           )}
-                        </div>
-                        <div className="grid gap-3">
-                          <Label>Horário de Funcionamento</Label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1">
-                              <Input
-                                type="time"
-                                value={timeRange.start}
-                                onChange={(e) => {
-                                  setTimeRange({
-                                    ...timeRange,
-                                    start: e.target.value,
-                                  });
-                                  setValueEdit("start_time", e.target.value);
-                                }}
-                                placeholder="Início"
-                              />
-                            </div>
-                            <span className="text-muted-foreground">até</span>
-                            <div className="flex-1">
-                              <Input
-                                type="time"
-                                value={timeRange.end}
-                                onChange={(e) => {
-                                  setTimeRange({
-                                    ...timeRange,
-                                    end: e.target.value,
-                                  });
-                                  setValueEdit("end_time", e.target.value);
-                                }}
-                                placeholder="Fim"
-                              />
-                            </div>
+                        <input type="hidden" {...registerEdit("name")} />
+                        {errorsEdit.name && (
+                          <span className="text-red-600 text-sm">
+                            {errorsEdit.name.message}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid gap-3">
+                        <Label>Horário de Funcionamento</Label>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <Input
+                              type="time"
+                              value={timeRange.start_time}
+                              onChange={(e) => {
+                                setTimeRange({
+                                  ...timeRange,
+                                  start_time: e.target.value,
+                                });
+                                setValueEdit("start_time", e.target.value);
+                              }}
+                              placeholder="Início"
+                            />
                           </div>
-                          <input
-                            type="hidden"
-                            {...registerEdit("start_time")}
-                          />
-                          <input type="hidden" {...registerEdit("end_time")} />
-                          {(errorsEdit.start_time || errorsEdit.end_time) && (
-                            <span className="text-red-600 text-sm">
-                              {errorsEdit.start_time?.message ||
-                                errorsEdit.end_time?.message}
-                            </span>
-                          )}
+                          <span className="text-muted-foreground">até</span>
+                          <div className="flex-1">
+                            <Input
+                              type="time"
+                              value={timeRange.end_time}
+                              onChange={(e) => {
+                                setTimeRange({
+                                  ...timeRange,
+                                  end_time: e.target.value,
+                                });
+                                setValueEdit("end_time", e.target.value);
+                              }}
+                              placeholder="Fim"
+                            />
+                          </div>
                         </div>
-                        <div className="grid gap-3">
-                          <Label>Bloco de horários de agendamentos</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between"
-                                disabled={loadingTimeBlocks}
-                              >
-                                {loadingTimeBlocks
-                                  ? "Carregando..."
-                                  : `${selectedTimeBlocks.length} de ${timeBlocks.length} blocos selecionados`}
-                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-full p-0"
-                              align="start"
+                        <input type="hidden" {...registerEdit("start_time")} />
+                        <input type="hidden" {...registerEdit("end_time")} />
+                        {(errorsEdit.start_time || errorsEdit.end_time) && (
+                          <span className="text-red-600 text-sm">
+                            {errorsEdit.start_time?.message ||
+                              errorsEdit.end_time?.message}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid gap-3">
+                        <Label>Bloco de horários de agendamentos</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                              disabled={loadingTimeBlocks}
                             >
-                              <div className="max-h-64 overflow-y-auto">
-                                {loadingTimeBlocks ? (
-                                  <div className="px-2 py-2 text-sm text-muted-foreground">
-                                    Carregando...
-                                  </div>
-                                ) : timeBlocks.length ? (
-                                  timeBlocks.map((timeblock) => (
-                                    <div
-                                      key={timeblock.id}
-                                      className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
-                                      onClick={() =>
+                              {loadingTimeBlocks
+                                ? "Carregando..."
+                                : `${selectedTimeBlocks.length} de ${timeBlocks.length} blocos selecionados`}
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <div className="max-h-64 overflow-y-auto">
+                              {loadingTimeBlocks ? (
+                                <div className="px-2 py-2 text-sm text-muted-foreground">
+                                  Carregando...
+                                </div>
+                              ) : timeBlocks.length ? (
+                                timeBlocks.map((timeblock) => (
+                                  <div
+                                    key={timeblock.id}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
+                                    onClick={() =>
+                                      toggleTimeBlockSelection(timeblock.id)
+                                    }
+                                  >
+                                    <Checkbox
+                                      checked={selectedTimeBlocks.includes(
+                                        timeblock.id
+                                      )}
+                                      onCheckedChange={() =>
                                         toggleTimeBlockSelection(timeblock.id)
                                       }
-                                    >
-                                      <Checkbox
-                                        checked={selectedTimeBlocks.includes(
-                                          timeblock.id
-                                        )}
-                                        onCheckedChange={() =>
-                                          toggleTimeBlockSelection(timeblock.id)
-                                        }
-                                      />
-                                      <span className="flex-1 text-sm">
-                                        {timeblock.minutes} minutos
-                                      </span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="px-2 py-2 text-sm text-muted-foreground">
-                                    Nenhum status disponível
+                                    />
+                                    <span className="flex-1 text-sm">
+                                      {timeblock.minutes} minutos
+                                    </span>
                                   </div>
-                                )}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        <div className="flex justify-start">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={handleResetForm}
-                            disabled={isSubmittingEdit}
-                          >
-                            <Plus />
-                            Adicionar nova sala
-                          </Button>
-                        </div>
+                                ))
+                              ) : (
+                                <div className="px-2 py-2 text-sm text-muted-foreground">
+                                  Nenhum bloco disponível
+                                </div>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
-                    </DialogFormWrapper>
-                  )}
+                      <div className="flex justify-start">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleResetForm}
+                          disabled={isSubmittingEdit}
+                        >
+                          <Plus />
+                          Adicionar nova sala
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogFormWrapper>
+                  {/* )} */}
                 </>
               ) : (
                 <DialogFormWrapper
@@ -653,9 +645,9 @@ const Agendamentos = () => {
                   isSubmitting={isSubmitting}
                   buttonSubmitName="Confirmar Agendamento"
                 >
-                  <div className="grid gap-4">
+                  <div className="grid gap-4 mt-4">
                     <div className="grid gap-3">
-                      <Label htmlFor="date">Data</Label>
+                      <Label htmlFor="date">Selecione uma Data (Obrigatório)</Label>
                       <Input id="date" type="date" {...register("date")} />
                       {errors.date && (
                         <span className="text-red-600 text-sm">
@@ -679,7 +671,7 @@ const Agendamentos = () => {
                         control={control}
                         render={({ field }) => (
                           <Select
-                            value={String(field.value)}
+                            value={field.value ? String(field.value) : ""}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger className="w-full">
@@ -698,7 +690,7 @@ const Agendamentos = () => {
                                 </SelectItem>
                               ) : (rooms ?? []).length ? (
                                 (rooms ?? []).map((s) => (
-                                  <SelectItem key={s.id} value={s.id}>
+                                  <SelectItem key={s.id} value={String(s.id)}>
                                     {s.name}
                                   </SelectItem>
                                 ))
@@ -725,10 +717,11 @@ const Agendamentos = () => {
           {selectedItem === "Clientes" && (
             <DashboardScreen
               title="Clientes"
-              subtitle="Gerencie seus clientes"
+              subtitle="Overview de todos os clientes"
               data={clients}
               columns={columnsClients}
               isLoading={isLoading}
+              placeholderInput="Filtre por nome"
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
               onFilterChange={(newFilters) => {
@@ -744,7 +737,11 @@ const Agendamentos = () => {
           {selectedItem === "Logs" && (
             <DashboardScreen
               title="Logs"
-              subtitle="Acompanhe todas as suas logs"
+              subtitle={
+                user.is_admin
+                  ? "Acompanhe todos os logs de clientes"
+                  : "Acompanhe todos os seus logs"
+              }
               data={logs}
               columns={logColumns.filter(
                 user.is_admin ? () => true : (col) => col.accessorKey !== "user"

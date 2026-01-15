@@ -1,4 +1,6 @@
+import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
 import { ColumnDef } from "@tanstack/react-table";
+
 
 // components/DataTable/types.ts
 export type Appointment = {
@@ -6,7 +8,7 @@ export type Appointment = {
   name: string;
   email: string;
   room: Room;
-  status: "agendado" | "Em análise" | "cancelado";
+  status: AppointmentStatus;
   date_appointment: string; // ISO string
 };
 
@@ -29,10 +31,11 @@ export type Client = {
     logs: boolean;
   };
   user: {
-    id: string;
     name: string;
     type: "Admin" | "Cliente";
   };
+  id: string;
+
   name: string;
   address: string;
   created_at: string; // ISO string

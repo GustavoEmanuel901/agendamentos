@@ -48,16 +48,16 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   const { isMobile, setOpenMobile } = useSidebar();
   const router = useRouter();
 
-  const { clearUser, user } = useUser();
+  const { user, clearUser } = useUser();
 
   const logout = async () => {
     try {
       await api.get("/logout");
 
-      clearUser();
-
       if (user?.is_admin) router.replace("/admin");
       else router.replace("/");
+
+      clearUser();
     } catch (error: unknown) {
       apiError(error, "Erro ao fazer logout.");
     }

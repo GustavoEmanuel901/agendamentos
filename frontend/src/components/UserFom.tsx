@@ -139,7 +139,7 @@ export default function UserForm({ type }: UserFormProps) {
           // Se tiver CEP, mostra os campos de endereço
           if (userData.zip_code) setShowAddressFields(true);
         } catch (error) {
-          console.error("Erro ao carregar dados do usuário:", error);
+          console.log("Erro ao carregar dados do usuário:", error);
         }
       }
     };

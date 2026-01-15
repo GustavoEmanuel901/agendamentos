@@ -4,14 +4,14 @@ export const RoomCreateOrUpdateSchema = z.object({
   start_time: z
     .string()
     .regex(
-      /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-      "Horário deve estar no formato HH:MM:SS"
+      /^([01]\d|2[0-3]):([0-5]\d)$/,
+      "Horário deve estar no formato HH:MM"
     ),
   end_time: z
     .string()
     .regex(
-      /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/,
-      "Horário deve estar no formato HH:MM:SS"
+      /^([01]\d|2[0-3]):([0-5]\d)$/,
+      "Horário deve estar no formato HH:MM"
     ),
   time_blocks: z.array(z.number()).optional(),
 });

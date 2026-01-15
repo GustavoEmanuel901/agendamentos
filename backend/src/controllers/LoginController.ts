@@ -5,6 +5,8 @@ import generateToken from "../utils/generateToken";
 import LogController from "./LogController";
 import ResponseMessages from "../utils/responseMessages";
 import { loginSchema } from "../schemas/LoginSchema";
+import Log from "../models/Log";
+import { LogsModuleEnum } from "../utils/logsModuleEnum";
 
 export default class LoginController {
   async login(req: Request, res: Response) {
@@ -40,7 +42,7 @@ export default class LoginController {
 
       logController.create({
         description: `Login.`,
-        module: "Minha Conta",
+        module: LogsModuleEnum.MY_ACCOUNT,
         user_id: user.dataValues.id,
       });
 
@@ -84,7 +86,7 @@ export default class LoginController {
 
       logController.create({
         description: `Logout.`,
-        module: "Minha Conta",
+        module: LogsModuleEnum.MY_ACCOUNT,
         user_id: Number(req.userId),
       });
 

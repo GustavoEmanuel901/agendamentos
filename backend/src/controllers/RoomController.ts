@@ -36,6 +36,7 @@ export default class RoomController {
       const { id } = req.params;
 
       const room = await Room.findByPk(id, {
+        attributes: ["id", "name", "start_time", "end_time"],
         include: [
           {
             model: TimeBlock,
@@ -50,8 +51,17 @@ export default class RoomController {
           .status(404)
           .json({ message: ResponseMessages.ROOM_NOT_FOUND });
 
-      return res.json(room);
-    } catch {
+      // Formatar start_time e end_time para HH:MM
+      const roomData = room.toJSON();
+      if (roomData.start_time)
+        roomData.start_time = roomData.start_time.substring(0, 5);
+
+      if (roomData.end_time)
+        roomData.end_time = roomData.end_time.substring(0, 5);
+
+      return res.json(roomData);
+    } catch (error) {
+      console.error(error);
       return res
         .status(500)
         .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
@@ -60,14 +70,7 @@ export default class RoomController {
 
   async createOrUpdate(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-
       const payload = RoomCreateOrUpdateSchema.parse(req.body);
-
-      const room = await Room.findByPk(id);
-
-      if (!room)
-        return res.status(404).json({ message: "Sala não encontrada" });
 
       const roomWithSameName = await Room.findOne({
         where: {
@@ -79,14 +82,6 @@ export default class RoomController {
 
       if (!roomWithSameName) {
         const roomCreated = await Room.create(payload);
-
-        const logController = new LogController();
-
-        await logController.create({
-          description: "Sala Criada",
-          module: "Salas",
-          user_id: Number(req.userId),
-        });
 
         if (payload.time_blocks) {
           await roomTimeBlocksController.create(
@@ -113,17 +108,12 @@ export default class RoomController {
         );
       }
 
-      await logController.create({
-        description: "Sala Alterada",
-        module: "Salas",
-        user_id: Number(req.userId),
-      });
-
       return res.json({
         data: roomUpdated,
         message: ResponseMessages.ROOM_UPDATED_SUCCESSFULLY,
       });
     } catch (err: any) {
+      console.log(err);
       if (err instanceof z.ZodError)
         return res.status(400).json({
           message: ResponseMessages.VALIDATION_ERROR,

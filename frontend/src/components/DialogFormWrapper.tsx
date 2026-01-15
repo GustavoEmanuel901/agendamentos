@@ -30,14 +30,14 @@ export default function DialogFormWrapper({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default" className="text-sm md:text-base">
+        <Button variant="default" className="text-sm md:text-base ">
           {buttonName}
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto bg-white">
         <form onSubmit={onSubmit}>
           <DialogHeader>
-            <DialogTitle className="text-xl">{title}</DialogTitle>
+            <DialogTitle className="text-xl py-5">{title}</DialogTitle>
           </DialogHeader>
 
           <Separator />

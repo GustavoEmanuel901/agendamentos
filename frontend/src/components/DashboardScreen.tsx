@@ -4,6 +4,7 @@ import type {
   Columns as ColumnWithType,
   DataTableFilters,
 } from "@/types/types";
+import { useEffect } from "react";
 
 interface DashboardScreenProps<TData> {
   title: string;
@@ -36,6 +37,10 @@ export default function DashboardScreen<TData>({
   getRowClassName,
   onRowSelect,
 }: DashboardScreenProps<TData>) {
+  useEffect(() => {
+    // Any side effects if needed in the future
+    console.log("DashboardScreen mounted or updated");
+  }, []);
   // Temporario
   return (
     <div className="flex flex-col flex-1 w-full min-h-0">

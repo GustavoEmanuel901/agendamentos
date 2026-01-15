@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import api from "@/services/api";
 import { X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { apiError } from "./apiError";
+import { AppointmentStatus } from "./appointmentStatusEnum";
 
 export const getAppointmentColumns = (
   onUpdate?: () => void,
@@ -40,12 +42,13 @@ export const getAppointmentColumns = (
     header: "Status",
     type: "badge",
     cell: ({ getValue }) => {
-      const status = String(getValue() ?? "").toLowerCase();
+      const status = String(getValue() ?? "");
+
       let borderColor = "border-gray-300";
 
-      if (status === "agendado") {
+      if (status == AppointmentStatus.SCHEDULED) {
         borderColor = "border-green-500 text-green-700";
-      } else if (status === "cancelado") {
+      } else if (status == AppointmentStatus.CANCELED) {
         borderColor = "border-red-500 text-red-700";
       }
 
@@ -63,13 +66,13 @@ export const getAppointmentColumns = (
 
     cell: ({ row }) => {
       const style =
-        row.original.status === "agendado" && isAdmin
+        row.original.status === AppointmentStatus.SCHEDULED && isAdmin
           ? "items-center justify-center"
           : "";
 
       return (
         <div className={`flex gap-2 ${style}`}>
-          {row.original.status !== "cancelado" && (
+          {row.original.status !== AppointmentStatus.CANCELED && (
             <>
               <Button
                 variant="default"
@@ -78,39 +81,40 @@ export const getAppointmentColumns = (
                 onClick={async () => {
                   try {
                     await api.put(`/appointments/${row.original.id}`, {
-                      status: "cancelado",
+                      status: AppointmentStatus.CANCELED,
                     });
                     toast.success("Agendamento cancelado com sucesso!");
                     onUpdate?.();
                   } catch (error) {
                     toast.error("Erro ao cancelar agendamento");
-                    console.error(error);
+                    console.log(error);
                   }
                 }}
               >
                 <X className="h-4 w-4" />
               </Button>
-              {isAdmin && row.original.status !== "agendado" && (
-                <Button
-                  variant="default"
-                  className="rounded-full"
-                  size="icon"
-                  onClick={async () => {
-                    try {
-                      await api.put(`/appointments/${row.original.id}`, {
-                        status: "agendado",
-                      });
-                      toast.success("Agendamento confirmado com sucesso!");
-                      onUpdate?.();
-                    } catch (error) {
-                      toast.error("Erro ao confirmar agendamento");
-                      console.error(error);
-                    }
-                  }}
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-              )}
+              {isAdmin &&
+                row.original.status !== AppointmentStatus.SCHEDULED && (
+                  <Button
+                    variant="default"
+                    className="rounded-full"
+                    size="icon"
+                    onClick={async () => {
+                      try {
+                        await api.put(`/appointments/${row.original.id}`, {
+                          status: AppointmentStatus.SCHEDULED,
+                        });
+                        toast.success("Agendamento confirmado com sucesso!");
+                        onUpdate?.();
+                      } catch (error) {
+                        toast.error("Erro ao confirmar agendamento");
+                        console.log(error);
+                      }
+                    }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )}
             </>
           )}
         </div>
@@ -197,14 +201,15 @@ export const getClientColumns = (
           className="cursor-pointer hover:opacity-80 transition-opacity"
           onClick={async () => {
             try {
-              await api.put(`/user/${row.original.user.id}/permission`, {
+              console.log(row.original);
+              await api.put(`/user/${row.original.id}/permission`, {
                 appointments: !row.original.permissions.appointments,
               });
               toast.success("Permissão atualizada com sucesso!");
               onPermissionToggle?.();
             } catch (error) {
-              toast.error("Erro ao atualizar permissão");
-              console.error(error);
+              apiError("Erro ao atualizar permissão");
+              console.log(error);
             }
           }}
         >
@@ -215,14 +220,14 @@ export const getClientColumns = (
           className="cursor-pointer hover:opacity-80 transition-opacity"
           onClick={async () => {
             try {
-              await api.put(`/user/${row.original.user.id}/permission`, {
+              await api.put(`/user/${row.original.id}/permission`, {
                 logs: !row.original.permissions.logs,
               });
               toast.success("Permissão atualizada com sucesso!");
               onPermissionToggle?.();
             } catch (error) {
-              toast.error("Erro ao atualizar permissão");
-              console.error(error);
+              apiError("Erro ao atualizar permissão");
+              console.log(error);
             }
           }}
         >
@@ -241,14 +246,13 @@ export const getClientColumns = (
           checked={row.original.status}
           onCheckedChange={async (checked) => {
             try {
-              await api.put(`/user/${row.original.user.id}/permission`, {
+              await api.put(`/user/${row.original.id}/permission`, {
                 status: checked,
               });
               toast.success("Status atualizado com sucesso!");
               onPermissionToggle?.();
             } catch (error) {
-              toast.error("Erro ao atualizar status");
-              console.error(error);
+              apiError("Erro ao atualizar status");
             }
           }}
         />

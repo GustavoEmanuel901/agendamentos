@@ -4,27 +4,30 @@ import { Popover, PopoverTrigger } from "@radix-ui/react-popover";
 import { Button } from "./ui/button";
 import { PopoverContent } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-interface FilterBarProps { 
-    placeholderInput?: string;
-    isLoading?: boolean;
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSearchChange?: (search: string) => void;
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onDateChange?: (date: Date | undefined) => void;
-    children?: React.ReactNode;
+interface FilterBarProps {
+  placeholderInput?: string;
+  isLoading?: boolean;
+  onSearchChange?: (search: string) => void;
+  onDateChange?: (date: Date | undefined) => void;
+  children?: React.ReactNode;
 }
 
-export default function FilterBar( {
-    placeholderInput,
-    isLoading,
-    onSearchChange,
-    onDateChange,
-    children,
+export default function FilterBar({
+  placeholderInput,
+  isLoading,
+  onSearchChange,
+  onDateChange,
+  children,
 }: FilterBarProps) {
-      const [searchValue, setSearchValue] = useState("");
-      const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+
+  useEffect(() => {
+    // Any side effects if needed in the future
+    console.log("FilterBar mounted or updated");
+  }, []);
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 mb-4">

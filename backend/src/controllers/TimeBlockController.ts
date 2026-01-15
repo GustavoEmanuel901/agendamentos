@@ -40,8 +40,8 @@ export default class TimeBlockController {
   async getAll(req: Request, res: Response) {
     try {
       const timeBlocks = await TimeBlock.findAll({
-        attributes: ["id", "minutos"],
-        order: [["minutos", "ASC"]],
+        attributes: ["id", "minutes"],
+        order: [["minutes", "ASC"]],
       });
       return res.status(200).json(timeBlocks);
     } catch (error) {

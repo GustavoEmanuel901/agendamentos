@@ -27,7 +27,7 @@ import { Input } from "./ui/input";
 import { Popover, PopoverContent } from "./ui/popover";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Calendar } from "./ui/calendar";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import type {
   Columns,
@@ -67,6 +67,9 @@ export default function DataTable<TData>({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log("DataTable mounted or updated");
+  }, []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedColumns = useMemo<ColumnDef<TData, any>[]>(() => {
     return columns.map((col) => {
@@ -92,7 +95,6 @@ export default function DataTable<TData>({
       }
 
       if (col.type === "object") {
-        //REVER ESSA PARTE
         return {
           ...col,
           cell: ({ getValue }) => {
@@ -154,7 +156,7 @@ export default function DataTable<TData>({
       filterDate: selectedDate?.toISOString(),
       page: 0,
     });
-  }, 300);
+  }, 1000);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -224,7 +226,6 @@ export default function DataTable<TData>({
               className="pl-9 w-full"
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
-              disabled={isLoading}
             />
           </div>
 

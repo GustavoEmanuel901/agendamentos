@@ -19,18 +19,15 @@ const messageReturned = (res: Response) => {
 export default async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.cookies?.token || req.headers.authorization;
 
-  if (!authHeader)
-    return messageReturned(res);
+  if (!authHeader) return messageReturned(res);
 
   const parts = authHeader.split(" ");
 
-  if (!(parts.length === 2))
-    return messageReturned(res);
+  if (!(parts.length === 2)) return messageReturned(res);
 
   const [scheme, token] = parts;
 
-  if (scheme !== "Bearer")
-    return messageReturned(res);
+  if (scheme !== "Bearer") return messageReturned(res);
 
   try {
     const decoded = jwt.verify(token, process.env.APP_SECRET!) as TokenPayload;
@@ -38,6 +35,10 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     req.userId = decoded.id;
     req.isAdmin = decoded.isAdmin;
     req.permissions = decoded.permissions;
+
+    console.log(decoded);
+
+    console.log(req.permissions);
 
     return next();
   } catch (err) {

@@ -31,7 +31,7 @@ class Room extends Model {
       through: models.RoomTimeBlock,
       foreignKey: "room_id",
       otherKey: "time_block_id",
-      as: "timeBlocks",
+      as: "time_blocks",
     });
 
     this.hasMany(models.Appointment, {

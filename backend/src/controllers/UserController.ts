@@ -12,6 +12,7 @@ import {
   userUpdateSchema,
 } from "../schemas/userSchemas";
 import ResponseMessages from "../utils/responseMessages";
+import { LogsModuleEnum } from "../utils/logsModuleEnum";
 
 export default class UserController {
   async createUser(req: Request, res: Response) {
@@ -44,8 +45,8 @@ export default class UserController {
       const logController = new LogController();
 
       logController.create({
-        description: `Criação de Usuário`,
-        module: "Minha Conta",
+        description: `Login`,
+        module: LogsModuleEnum.MY_ACCOUNT,
         user_id: Number(req.userId),
       });
 
@@ -135,6 +136,9 @@ export default class UserController {
         order,
         sort,
       } = req.query as Partial<GetFilteres>;
+
+      console.log(req.query);
+
       const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limit, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
@@ -156,7 +160,7 @@ export default class UserController {
           start.setHours(0, 0, 0, 0);
           const end = new Date(d);
           end.setHours(23, 59, 59, 999);
-          where.data_criacao = { [Op.gte]: start, [Op.lte]: end };
+          where.created_at = { [Op.gte]: start, [Op.lte]: end };
         }
       }
 
@@ -164,12 +168,13 @@ export default class UserController {
         where,
         limit: perPageNum,
         offset,
-        order: [[sort || "data_criacao", order || "DESC"]],
+        order: [[order || "created_at", sort || "DESC"]],
       });
 
       const clients = rows.map((user) => ({
+        id: user.dataValues.id,
+
         user: {
-          id: user.dataValues.id,
           name: `${user.dataValues.name} ${user.dataValues.last_name}`,
           type: user.dataValues.admin ? "Admin" : "Cliente",
         },
@@ -192,8 +197,10 @@ export default class UserController {
         },
       });
     } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      return res.status(500).json({ message: "Erro ao buscar clientes" });
+      console.error(error);
+      return res
+        .status(500)
+        .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -244,7 +251,7 @@ export default class UserController {
 
       await logController.create({
         description: "Atualização de Usuário",
-        module: "Minha Conta",
+        module: LogsModuleEnum.MY_ACCOUNT,
         user_id: Number(req.userId),
       });
 
@@ -255,6 +262,7 @@ export default class UserController {
           message: ResponseMessages.VALIDATION_ERROR,
           errors: err.message,
         });
+
       console.error(err);
       return res
         .status(500)
@@ -285,12 +293,13 @@ export default class UserController {
 
       return res.json({ message: ResponseMessages.USER_UPDATED_SUCCESSFULLY });
     } catch (err: any) {
+      console.error(err);
       if (err instanceof z.ZodError)
         return res.status(400).json({
           message: ResponseMessages.VALIDATION_ERROR,
           errors: err.message,
         });
-      console.error(err);
+
       return res
         .status(500)
         .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });

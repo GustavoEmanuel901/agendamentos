@@ -67,8 +67,7 @@ routes.get("/logs", auth, permissionLogs, logController.list);
 
 routes.get("/rooms", auth, roomController.list);
 routes.get("/room/:id", auth, admin, roomController.getOne);
-routes.post("/room/:id", auth, admin, roomController.createOrUpdate);
-
+routes.post("/room", auth, admin, roomController.createOrUpdate);
 
 // TIME BLOCK ROUTES
 routes.get("/timeblocks", auth, admin, timeBlockController.getAll);

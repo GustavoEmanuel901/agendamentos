@@ -14,7 +14,6 @@ interface LogCreate {
 export default class LogController {
   async list(req: Request, res: Response) {
     try {
-
       const {
         page = "1",
         limit = "10",
@@ -30,7 +29,9 @@ export default class LogController {
       const perPageNum = Math.max(1, parseInt(limit, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
 
-      const where: any = {};
+      const where: any = {
+        "$user.admin$": false,
+      };
 
       if (userId && !req.isAdmin) where.user_id = userId;
 

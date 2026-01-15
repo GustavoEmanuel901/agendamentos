@@ -15,15 +15,16 @@ import {
   appointmentCreateSchema,
   appointmentUpdateSchema,
 } from "../schemas/appointmentSchemas";
+import { LogsModuleEnum } from "../utils/logsModuleEnum";
 
 export default class AppointmentControler {
   async create(req: Request, res: Response) {
     try {
       const payload = appointmentCreateSchema.parse(req.body);
 
-      const dateTimeString = `${payload.date}T${payload.hours}:00`;
-      const data_agendamento = new Date(dateTimeString);
-      if (isNaN(data_agendamento.getTime())) {
+      const dateTimeString = `${payload.date}T${payload.time}:00`;
+      const date_appointment = new Date(dateTimeString);
+      if (isNaN(date_appointment.getTime())) {
         return res
           .status(400)
           .json({ message: ResponseMessages.INVALID_DATE_TIME });
@@ -37,9 +38,9 @@ export default class AppointmentControler {
           .json({ message: ResponseMessages.ROOM_NOT_FOUND });
 
       await Appointment.create({
-        room_id: payload.room_id,
+        room_id: Number(payload.room_id),
         status: AppointmentStatusEnum.UNDER_REVIEW,
-        data_agendamento,
+        date_appointment,
         user_id: req.userId,
       });
 
@@ -47,7 +48,7 @@ export default class AppointmentControler {
 
       logController.create({
         description: "Criação de Agendamento",
-        module: "Agendamentos",
+        module: LogsModuleEnum.APPOINTMENTS,
         user_id: Number(req.userId),
       });
 
@@ -55,6 +56,7 @@ export default class AppointmentControler {
         .status(201)
         .json({ message: ResponseMessages.APPOINTMENT_CREATED_SUCCESS });
     } catch (error: any) {
+      console.error(error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: "Erro de validação",
@@ -193,6 +195,10 @@ export default class AppointmentControler {
 
       // SOMENTE ADM PODEM CONFIRMAR AGENDAMENTOS
       if (payload.status == AppointmentStatusEnum.SCHEDULED && !req.isAdmin) {
+        console.log(
+          "Acesso negado: somente admins podem confirmar agendamentos"
+        );
+
         return res
           .status(403)
           .json({ message: ResponseMessages.ACCESS_DENIED });
@@ -205,13 +211,13 @@ export default class AppointmentControler {
       if (payload.status == AppointmentStatusEnum.CANCELED) {
         await logController.create({
           description: "Agendamento Cancelado",
-          module: "Agendamento",
+          module: LogsModuleEnum.APPOINTMENTS,
           user_id: Number(req.userId),
         });
       } else if (payload.status == AppointmentStatusEnum.SCHEDULED) {
         await logController.create({
           description: "Agendamento Confirmado",
-          module: "Agendamento",
+          module: LogsModuleEnum.APPOINTMENTS,
           user_id: Number(req.userId),
         });
       }
@@ -220,6 +226,7 @@ export default class AppointmentControler {
         message: ResponseMessages.APPOINTMENT_UPDATED_SUCCESSFULLY,
       });
     } catch (err) {
+      console.error(err);
       if (err instanceof z.ZodError)
         return res.status(400).json({
           message: ResponseMessages.VALIDATION_ERROR,
