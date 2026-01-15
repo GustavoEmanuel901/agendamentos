@@ -3,13 +3,12 @@ import { RegisterOptions, UseFormRegister, FieldError } from "react-hook-form";
 import { AiFillEyeInvisible, AiFillEye } from "react-icons/ai";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  type?: "text" | "email" | "password";
   label: string;
   placeholder?: string;
   required?: boolean;
   name: string;
   // eslint-disable-next-line
-  register: UseFormRegister<any>;
+  register?: UseFormRegister<any>;
   validation?: RegisterOptions;
   error?: FieldError;
   showPasswordToggle?: boolean;
@@ -32,7 +31,7 @@ const Input: React.FC<InputProps> = ({
   const inputType = isPassword && showPassword ? "text" : type;
 
   return (
-    <div className="mb-6">
+    <div>
       <label className="block text-gray-700 text-sm font-medium mb-2">
         {label} {required && <span>(Obrigatório)</span>}
       </label>
@@ -54,7 +53,7 @@ const Input: React.FC<InputProps> = ({
             
           `}
           {...rest}
-          {...register(name, validation)}
+          {...(register ? register(name, validation) : {})}
         />
 
         {isPassword && showPasswordToggle && (

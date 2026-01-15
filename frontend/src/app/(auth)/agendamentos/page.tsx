@@ -27,7 +27,8 @@ import {
   AppointmentFormData,
 } from "@/schemas/appointment.schema";
 
-import { Input } from "@/components/ui/input";
+import Input from "@/components/Input";
+// import { Input } from "@/components/ui/input";
 import { Label } from "@radix-ui/react-label";
 import {
   Select,
@@ -53,7 +54,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { apiError } from "@/utils/apiError";
-import App from "next/app";
 import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
 
 const Agendamentos = () => {
@@ -187,10 +187,10 @@ const Agendamentos = () => {
       );
 
       setLogs(response.data.data);
-      // setPagination({
-      //   page: response.data.meta.page - 1,
-      //   totalPages: response.data.meta.total_pages,
-      // });
+      setPagination({
+        page: response.data.meta.page - 1,
+        totalPages: response.data.meta.total_pages,
+      });
     } catch (error) {
       apiError(error, "Erro ao buscar logs");
     } finally {
@@ -239,6 +239,8 @@ const Agendamentos = () => {
   const fetchRoomDetail = useCallback(
     async (roomId: string) => {
       try {
+        if (user && user.is_admin === false) return;
+
         const response = await api.get(`/room/${roomId}`);
         const data = response.data;
 
@@ -270,7 +272,7 @@ const Agendamentos = () => {
         apiError(error, "Erro ao buscar detalhes da sala");
       }
     },
-    [setValueEdit]
+    [setValueEdit, user]
   );
 
   // Buscar clientes com filtros
@@ -330,7 +332,7 @@ const Agendamentos = () => {
 
       if (selectedAppointment) {
         await api.put(`/appointments/${selectedAppointment.id}`, {
-          room_id: newRoom.data.id,
+          room_id: newRoom.data.data.id,
         });
       }
 
@@ -341,7 +343,7 @@ const Agendamentos = () => {
       setSelectedTimeBlocks([]);
       fetchAppointments();
 
-      toast.success("Agendamento atualizado com sucesso!");
+      toast.success("Sala registrada!!");
     } catch (error) {
       apiError(error, "Erro ao atualizar agendamento");
     }
@@ -352,6 +354,7 @@ const Agendamentos = () => {
     resetEdit();
     setRoomSearchEdit("");
     setTimeRange({ start_time: "", end_time: "" });
+    setSelectedTimeBlocks([]);
   };
 
   // Alternar seleção de time blocks
@@ -479,10 +482,11 @@ const Agendamentos = () => {
                   >
                     <div className="grid gap-4 mt-4">
                       <div className="grid gap-3">
-                        <Label htmlFor="room-name">Nome da Sala</Label>
                         <Input
                           id="room-search"
                           type="text"
+                          name="name"
+                          label="Nome da sala"
                           placeholder="Digite para buscar sala..."
                           value={roomSearchEdit}
                           onChange={(e) => {
@@ -496,7 +500,6 @@ const Agendamentos = () => {
                               fetchRooms();
                             }
                           }}
-                          className="mb-2"
                         />
                         {rooms.length > 0 &&
                           roomSearchEdit &&
@@ -511,8 +514,8 @@ const Agendamentos = () => {
                                   onClick={() => {
                                     setRoomSearchEdit(room.name);
                                     setValueEdit("name", room.name);
-                                    // Buscar detalhes da sala (inclui time_blocks)
-                                    if (user.is_admin) fetchRoomDetail(room.id);
+
+                                    fetchRoomDetail(room.id);
                                   }}
                                 >
                                   {room.name}
@@ -528,11 +531,15 @@ const Agendamentos = () => {
                         )}
                       </div>
                       <div className="grid gap-3">
-                        <Label>Horário de Funcionamento</Label>
+                        <Label className="block text-gray-700 text-sm font-medium ">
+                          Horário Inicial & Final da Sala
+                        </Label>
                         <div className="flex items-center gap-2">
                           <div className="flex-1">
                             <Input
+                              label=""
                               type="time"
+                              name="start_time"
                               value={timeRange.start_time}
                               onChange={(e) => {
                                 setTimeRange({
@@ -548,6 +555,8 @@ const Agendamentos = () => {
                           <div className="flex-1">
                             <Input
                               type="time"
+                              label=""
+                              name="end_time"
                               value={timeRange.end_time}
                               onChange={(e) => {
                                 setTimeRange({
@@ -570,7 +579,9 @@ const Agendamentos = () => {
                         )}
                       </div>
                       <div className="grid gap-3">
-                        <Label>Bloco de horários de agendamentos</Label>
+                        <Label className="block text-gray-700 text-sm font-medium mb-2">
+                          Bloco de horários de agendamentos
+                        </Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -645,10 +656,17 @@ const Agendamentos = () => {
                   isSubmitting={isSubmitting}
                   buttonSubmitName="Confirmar Agendamento"
                 >
-                  <div className="grid gap-4 mt-4">
+                  <div className="grid gap-4 mt-4 mb-4">
                     <div className="grid gap-3">
-                      <Label htmlFor="date">Selecione uma Data (Obrigatório)</Label>
-                      <Input id="date" type="date" {...register("date")} />
+                      <Input
+                        register={register}
+                        required={true}
+                        label="Selecione uma Data"
+                        placeholder="Selecione uma data"
+                        id="date"
+                        type="date"
+                        {...register("date")}
+                      />
                       {errors.date && (
                         <span className="text-red-600 text-sm">
                           {errors.date.message}
@@ -656,8 +674,15 @@ const Agendamentos = () => {
                       )}
                     </div>
                     <div className="grid gap-3">
-                      <Label htmlFor="time">Horário</Label>
-                      <Input id="time" type="time" {...register("time")} />
+                      <Input
+                        register={register}
+                        label="Selecione um Horário"
+                        placeholder="Selecione um horário"
+                        required={true}
+                        id="time"
+                        type="time"
+                        {...register("time")}
+                      />
                       {errors.time && (
                         <span className="text-red-600 text-sm">
                           {errors.time.message}
@@ -665,7 +690,9 @@ const Agendamentos = () => {
                       )}
                     </div>
                     <div className="grid gap-3 ">
-                      <Label>Sala</Label>
+                      <Label className="block text-gray-700 text-sm font-medium mb-2">
+                        Selecione uma Sala (Obrigatório)
+                      </Label>
                       <Controller
                         name="room_id"
                         control={control}

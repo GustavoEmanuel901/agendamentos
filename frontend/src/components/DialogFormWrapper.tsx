@@ -37,7 +37,7 @@ export default function DialogFormWrapper({
       <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto bg-white">
         <form onSubmit={onSubmit}>
           <DialogHeader>
-            <DialogTitle className="text-xl py-5">{title}</DialogTitle>
+            <DialogTitle className="text-xl mb-4">{title}</DialogTitle>
           </DialogHeader>
 
           <Separator />
@@ -48,7 +48,7 @@ export default function DialogFormWrapper({
 
           <DialogFooter>
             <Button
-              className="w-full my-2"
+              className="w-full my-4 py-5 text-3xl md:text-base"
               type="submit"
               disabled={isSubmitting}
             >

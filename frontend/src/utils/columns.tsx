@@ -14,7 +14,7 @@ export const getAppointmentColumns = (
   isAdmin?: boolean
 ): Columns<Appointment>[] => [
   {
-    accessorKey: "data_agendamento",
+    accessorKey: "date_appointment",
     header: "Data do Agendamento",
     isOrderable: true,
     type: "normal",

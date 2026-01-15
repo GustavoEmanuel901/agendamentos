@@ -98,7 +98,6 @@ export default class RoomController {
 
       const roomUpdated = await roomWithSameName.update(payload);
 
-      const logController = new LogController();
 
       if (payload.time_blocks) {
         await roomTimeBlocksController.deleteByRoom(roomUpdated.dataValues.id);
