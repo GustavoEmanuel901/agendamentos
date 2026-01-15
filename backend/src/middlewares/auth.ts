@@ -3,21 +3,34 @@ import { Request, Response, NextFunction } from "express";
 import { TokenPayload } from "../@types/tokenPayload";
 import ResponseMessages from "../utils/responseMessages";
 
+const messageReturned = (res: Response) => {
+  const isProd = process.env.NODE_ENV === "production";
+
+  return res
+    .status(401)
+    .clearCookie("token", {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+    })
+    .json({ message: ResponseMessages.INVALID_TOKEN });
+};
+
 export default async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.cookies?.token || req.headers.authorization;
 
   if (!authHeader)
-    return res.status(401).send({ error: ResponseMessages.INVALID_TOKEN });
+    return messageReturned(res);
 
   const parts = authHeader.split(" ");
 
   if (!(parts.length === 2))
-    return res.status(401).send({ error: ResponseMessages.INVALID_TOKEN });
+    return messageReturned(res);
 
   const [scheme, token] = parts;
 
   if (scheme !== "Bearer")
-    return res.status(401).send({ error: ResponseMessages.INVALID_TOKEN });
+    return messageReturned(res);
 
   try {
     const decoded = jwt.verify(token, process.env.APP_SECRET!) as TokenPayload;
@@ -28,6 +41,6 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 
     return next();
   } catch (err) {
-    return res.status(401).json({ error: ResponseMessages.INVALID_TOKEN });
+    return messageReturned(res);
   }
 };

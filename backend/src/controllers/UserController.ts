@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Op } from "sequelize";
 import LogController from "./LogController";
-import generateToken from "../utils/generate_token";
+import generateToken from "../utils/generateToken";
 import {
   userCreateSchema,
   userPermissionsUpdateSchema,

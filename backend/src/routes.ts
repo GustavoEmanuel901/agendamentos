@@ -10,8 +10,8 @@ import LogController from "./controllers/LogController";
 import RoomController from "./controllers/RoomController";
 import TimeBlockController from "./controllers/TimeBlockController";
 import auth from "./middlewares/auth";
-import permissionAppointments from "./middlewares/permission_appointments";
-import permissionLogs from "./middlewares/permission_logs";
+import permissionAppointments from "./middlewares/permissionAppointments";
+import permissionLogs from "./middlewares/permissionLogs";
 import LoginController from "./controllers/LoginController";
 import admin from "./middlewares/admin";
 
@@ -68,12 +68,7 @@ routes.get("/logs", auth, permissionLogs, logController.list);
 routes.get("/rooms", auth, roomController.list);
 routes.get("/room/:id", auth, admin, roomController.getOne);
 routes.post("/room/:id", auth, admin, roomController.createOrUpdate);
-// routes.get(
-//   "/room/:roomId/timeblocks",
-//   auth,
-//   admin,
-//   timeBlockController.listByRoom
-// );
+
 
 // TIME BLOCK ROUTES
 routes.get("/timeblocks", auth, admin, timeBlockController.getAll);

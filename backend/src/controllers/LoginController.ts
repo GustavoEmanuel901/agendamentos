@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
-import generateToken from "../utils/generate_token";
+import generateToken from "../utils/generateToken";
 import LogController from "./LogController";
 import ResponseMessages from "../utils/responseMessages";
 import { loginSchema } from "../schemas/LoginSchema";
