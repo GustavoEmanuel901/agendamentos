@@ -18,6 +18,7 @@ import api from "@/services/api";
 import { useUser } from "@/contexts/userContext";
 import { SidebarItemTipoEnum } from "@/utils/sidebarItems";
 import { apiError } from "@/utils/apiError";
+import { useRouter } from "next/navigation";
 
 export interface SidebarItemProps {
   title: string;
@@ -45,14 +46,18 @@ const SidebarComponent: React.FC<SidebarProps> = ({
 }) => {
   const [selected, setSelected] = useState<string | null>(selectedItem ?? null);
   const { isMobile, setOpenMobile } = useSidebar();
+  const router = useRouter();
 
-  const { clearUser } = useUser();
+  const { clearUser, user } = useUser();
 
   const logout = async () => {
     try {
       await api.get("/logout");
 
       clearUser();
+
+      if (user?.is_admin) router.replace("/admin");
+      else router.replace("/");
     } catch (error: unknown) {
       apiError(error, "Erro ao fazer logout.");
     }

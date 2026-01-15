@@ -1,4 +1,4 @@
-import { DataTable } from "@/components/DataTable";
+import DataTable from "@/components/DataTable";
 import HeaderTable from "./HeaderTable";
 import type {
   Columns as ColumnWithType,

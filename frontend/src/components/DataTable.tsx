@@ -2,7 +2,6 @@
 
 // components/DataTable/data-table.tsx
 "use client";
-"use no memo";
 
 import {
   ColumnDef,
@@ -30,7 +29,12 @@ import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Calendar } from "./ui/calendar";
 import { useState, useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { Columns, Columns as ColumnWithType } from "@/types/types";
+import type {
+  Columns,
+  Columns as ColumnWithType,
+  DataTableFilters,
+} from "@/types/types";
+import { useDebouncedCallback } from "use-debounce";
 
 export interface DataTableProps<TData> {
   columns: Columns<TData>[];
@@ -39,19 +43,13 @@ export interface DataTableProps<TData> {
   totalPages?: number;
   currentPage?: number;
   isLoading?: boolean;
-  onFilterChange?: (filters: {
-    pesquisa?: string;
-    data?: string;
-    page?: number;
-    ordenacao?: string;
-    ordem?: "asc" | "desc";
-  }) => void;
+  onFilterChange?: (filters: DataTableFilters) => void;
   getRowClassName?: (row: TData) => string;
   onRowSelect?: (row: TData | null) => void;
   placeholderInput?: string;
 }
 
-export function DataTable<TData>({
+export default function DataTable<TData>({
   columns,
   data,
   children,
@@ -78,7 +76,14 @@ export function DataTable<TData>({
         return {
           ...col,
           cell: ({ getValue }) => (
-            <Badge variant={col.variant ?? "secondary"}>
+            <Badge
+              className={
+                col.variant === "secondary"
+                  ? "bg-(--background) px-2 py-1 border border-gray-300 text-gray-700"
+                  : ""
+              }
+              variant={col.variant ?? "secondary"}
+            >
               {String(getValue() ?? "")}
             </Badge>
           ),
@@ -143,25 +148,29 @@ export function DataTable<TData>({
     },
   });
 
+  const debouncedFilter = useDebouncedCallback((value: string) => {
+    onFilterChange?.({
+      search: value,
+      filterDate: selectedDate?.toISOString(),
+      page: 0,
+    });
+  }, 300);
+
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchValue(value);
-      onFilterChange?.({
-        pesquisa: value,
-        data: selectedDate?.toISOString(),
-        page: 0,
-      });
+      debouncedFilter(value);
       setPageIndex(0);
     },
-    [selectedDate, onFilterChange]
+    [debouncedFilter]
   );
 
   const handleDateChange = useCallback(
     (date: Date | undefined) => {
       setSelectedDate(date);
       onFilterChange?.({
-        pesquisa: searchValue,
-        data: date?.toISOString(),
+        search: searchValue,
+        filterDate: date?.toISOString(),
         page: 0,
       });
       setPageIndex(0);
@@ -175,11 +184,11 @@ export function DataTable<TData>({
 
       setPageIndex(newPage);
       onFilterChange?.({
-        pesquisa: searchValue,
-        data: selectedDate?.toISOString(),
+        search: searchValue,
+        filterDate: selectedDate?.toISOString(),
         page: newPage,
-        ordenacao: sortOrder ? ordeblaColumn?.accessorKey : undefined,
-        ordem: sortOrder ?? undefined,
+        order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
+        sort: sortOrder ?? undefined,
       });
     },
     [searchValue, selectedDate, sortOrder, onFilterChange, columns]
@@ -194,12 +203,12 @@ export function DataTable<TData>({
     setSortOrder(newOrder);
     setPageIndex(0);
     onFilterChange?.({
-      pesquisa: searchValue,
-      data: selectedDate?.toISOString(),
+      search: searchValue,
+      filterDate: selectedDate?.toISOString(),
       page: 0,
-      ordenacao: sortOrder ? ordeblaColumn?.accessorKey : undefined,
+      order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
 
-      ordem: newOrder ?? undefined,
+      sort: newOrder ?? undefined,
     });
   }, [sortOrder, searchValue, selectedDate, onFilterChange, columns]);
 
@@ -297,7 +306,9 @@ export function DataTable<TData>({
                   {table.getRowModel().rows.map((row) => (
                     <TableRow
                       key={row.id}
-                      className={`${getRowClassName?.(row.original) ?? ""} ${
+                      className={`h-16 ${
+                        getRowClassName?.(row.original) ?? ""
+                      } ${
                         selectedRowId === row.id
                           ? "bg-blue-50 dark:bg-blue-950"
                           : ""
@@ -316,7 +327,7 @@ export function DataTable<TData>({
                       }}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} className="py-4">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()

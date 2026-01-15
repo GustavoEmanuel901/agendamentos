@@ -18,23 +18,14 @@ export default async function Layout({
 
   const admin = cookiesList.get("admin")?.value;
 
-  const requestUser = await api
-    .get("/profile", {
-      headers: {
-        Authorization: token,
-      },
-    })
-    .then((res) => res)
-    .catch((err) => {
-      if (err.status === 401) {
-        cookiesList.delete("token");
-      }
-
-      return { status: err.response?.status || 500, data: null };
-    });
+  const requestUser = await api.get("/profile", {
+    headers: {
+      Authorization: token,
+    },
+  });
 
   if (requestUser.status !== 200) {
-    if (admin) {
+    if (admin === "true") {
       return redirect("/admin");
     } else {
       return redirect("/");

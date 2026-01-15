@@ -364,12 +364,15 @@ const Agendamentos = () => {
   };
 
   // Buscar salas com debounce
-  const debouncedFetchRooms = useCallback((searchTerm: string) => {
-    const timeoutId = setTimeout(() => {
-      fetchRooms(searchTerm);
-    }, 300); // 300ms de delay
+  const debouncedFetchRooms = useMemo(() => {
+    let timeout: NodeJS.Timeout;
 
-    return () => clearTimeout(timeoutId);
+    return (searchTerm: string) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        fetchRooms(searchTerm);
+      }, 300);
+    };
   }, []);
 
   const verifyPermissionLog = useCallback(() => {
@@ -743,7 +746,9 @@ const Agendamentos = () => {
               title="Logs"
               subtitle="Acompanhe todas as suas logs"
               data={logs}
-              columns={logColumns}
+              columns={logColumns.filter(
+                user.is_admin ? () => true : (col) => col.accessorKey !== "user"
+              )}
               isLoading={isLoading}
               currentPage={pagination.page}
               totalPages={pagination.totalPages}

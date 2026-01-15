@@ -44,7 +44,7 @@ export default class UserController {
       const logController = new LogController();
 
       logController.create({
-        description: `Usuário criado`,
+        description: `Criação de Usuário`,
         module: "Minha Conta",
         user_id: Number(req.userId),
       });
@@ -243,7 +243,7 @@ export default class UserController {
       const logController = new LogController();
 
       await logController.create({
-        description: "Usuário Alterado",
+        description: "Atualização de Usuário",
         module: "Minha Conta",
         user_id: Number(req.userId),
       });

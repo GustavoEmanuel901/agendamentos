@@ -15,17 +15,17 @@ export default class LoginController {
         where: { email: payload.email, status: true },
       });
 
-      if (!user) {
-        return res.status(404).send({ error: ResponseMessages.USER_NOT_FOUND });
-      }
+      if (!user)
+        return res
+          .status(404)
+          .send({ message: ResponseMessages.USER_NOT_FOUND });
 
       if (
         !(await bcrypt.compare(payload.password, user.dataValues.password_hash))
-      ) {
+      )
         return res
           .status(404)
-          .send({ error: ResponseMessages.INCORRECT_PASSWORD });
-      }
+          .send({ message: ResponseMessages.INCORRECT_PASSWORD });
 
       const token = generateToken({
         id: user.dataValues.id,
@@ -39,7 +39,7 @@ export default class LoginController {
       const logController = new LogController();
 
       logController.create({
-        description: `Usuário realizou login.`,
+        description: `Login.`,
         module: "Minha Conta",
         user_id: user.dataValues.id,
       });
@@ -72,10 +72,9 @@ export default class LoginController {
           message: ResponseMessages.LOGIN_SUCCESS,
         });
     } catch (error) {
-      console.error(error);
       return res
         .status(500)
-        .send({ error: ResponseMessages.INTERNAL_SERVER_ERROR });
+        .send({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -84,7 +83,7 @@ export default class LoginController {
       const logController = new LogController();
 
       logController.create({
-        description: `Usuário realizou logout.`,
+        description: `Logout.`,
         module: "Minha Conta",
         user_id: Number(req.userId),
       });
@@ -102,7 +101,7 @@ export default class LoginController {
     } catch (error) {
       return res
         .status(500)
-        .send({ error: ResponseMessages.INTERNAL_SERVER_ERROR });
+        .send({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
     }
   }
 }

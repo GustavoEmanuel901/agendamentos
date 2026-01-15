@@ -119,9 +119,10 @@ export const getAppointmentColumns = (
   },
 ];
 
-export const columns: Columns<Appointment>[] = getAppointmentColumns();
+export const appointmentColumns: Columns<Appointment>[] =
+  getAppointmentColumns();
 
-export const logColumns: Columns<Log>[] = [
+export const getLogColumns = (): Columns<Log>[] => [
   {
     accessorKey: "user",
     header: "Cliente",
@@ -142,8 +143,9 @@ export const logColumns: Columns<Log>[] = [
   },
   {
     accessorKey: "created_at",
-    header: "Data/Hora",
+    header: "Data e Horário",
     type: "badge",
+    variant: "secondary",
     isOrderable: true,
     accessorFn: (row) => {
       const date = new Date(row.created_at);
@@ -153,6 +155,8 @@ export const logColumns: Columns<Log>[] = [
     },
   },
 ];
+
+export const logColumns: Columns<Log>[] = getLogColumns();
 
 export const getClientColumns = (
   onPermissionToggle?: () => void

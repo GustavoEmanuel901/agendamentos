@@ -15,7 +15,7 @@ export function middleware(req: NextRequest) {
 
   // Se for rota privada e não tiver token, redireciona para login
   if (isPrivateRoute && !token) {
-    return admin
+    return admin?.value === "true"
       ? NextResponse.redirect(new URL("/admin", req.url))
       : NextResponse.redirect(new URL("/", req.url));
   }
