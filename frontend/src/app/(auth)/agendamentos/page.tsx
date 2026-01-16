@@ -70,7 +70,7 @@ const Agendamentos = () => {
     totalPages: 1,
   });
   const [filters, setFilters] = useState<DataTableFilters | undefined>(
-    undefined
+    undefined,
   );
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
@@ -95,9 +95,9 @@ const Agendamentos = () => {
             order: order?.order ?? undefined,
             sort: order?.sort ?? undefined,
           }),
-        user?.is_admin
+        user?.is_admin,
       ),
-    [filters, pagination.page, user?.is_admin, order]
+    [filters, pagination.page, user?.is_admin, order],
   );
 
   const columnsClients = useMemo(
@@ -109,9 +109,9 @@ const Agendamentos = () => {
           page: pagination.page + 1,
           order: order?.order ?? undefined,
           sort: order?.sort ?? undefined,
-        })
+        }),
       ),
-    [filters, pagination.page, order]
+    [filters, pagination.page, order],
   );
 
   const {
@@ -157,7 +157,7 @@ const Agendamentos = () => {
       params.append("page", String(newFilters?.page ?? 1));
 
       const response = await api.get<ApiResponse<Appointment>>(
-        `/appointments?${params.toString()}`
+        `/appointments?${params.toString()}`,
       );
 
       setAppointments(response.data.data);
@@ -185,7 +185,7 @@ const Agendamentos = () => {
       params.append("page", String(newFilters?.page ?? 1));
 
       const response = await api.get<ApiResponse<Log>>(
-        `/logs?${params.toString()}`
+        `/logs?${params.toString()}`,
       );
 
       setLogs(response.data.data);
@@ -274,7 +274,7 @@ const Agendamentos = () => {
         apiError(error, "Erro ao buscar detalhes da sala");
       }
     },
-    [setValueEdit, user]
+    [setValueEdit, user],
   );
 
   // Buscar clientes com filtros
@@ -290,7 +290,7 @@ const Agendamentos = () => {
       params.append("page", String(newFilters?.page ?? 1));
 
       const response = await api.get<ApiResponse<Client>>(
-        `/users/clients?${params.toString()}`
+        `/users/clients?${params.toString()}`,
       );
 
       setClients(response.data.data);
@@ -346,7 +346,6 @@ const Agendamentos = () => {
       setRoomSearchEdit("");
       setTimeRange({ start_time: "", end_time: "" });
       setSelectedTimeBlocks([]);
-
 
       fetchAppointments({
         ...filters,
@@ -520,7 +519,7 @@ const Agendamentos = () => {
                         {rooms.length > 0 &&
                           roomSearchEdit &&
                           !rooms.some(
-                            (room) => room.name === roomSearchEdit
+                            (room) => room.name === roomSearchEdit,
                           ) && (
                             <div className="border rounded-md max-h-40 overflow-y-auto">
                               {rooms.map((room) => (
@@ -629,7 +628,7 @@ const Agendamentos = () => {
                                   >
                                     <Checkbox
                                       checked={selectedTimeBlocks.includes(
-                                        timeblock.id
+                                        timeblock.id,
                                       )}
                                       onCheckedChange={() =>
                                         toggleTimeBlockSelection(timeblock.id)
@@ -789,12 +788,18 @@ const Agendamentos = () => {
               }
               data={logs}
               columns={logColumns.filter(
-                user.is_admin ? () => true : (col) => col.accessorKey !== "user"
+                user.is_admin
+                  ? () => true
+                  : (col) => col.accessorKey !== "user",
               )}
               isLoading={isLoading}
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
-              placeholderInput="Filtre por tipo de atividade ou módulo"
+              placeholderInput={
+                user.is_admin
+                  ? "Filtre por nome, módulo ou tipo de atividade"
+                  : "Filtre por módulo ou tipo de atividade"
+              }
               onFilterChange={(newFilters) => {
                 setFilters({
                   search: newFilters.search ?? "",
