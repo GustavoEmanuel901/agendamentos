@@ -67,9 +67,10 @@ export default function DataTable<TData>({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
+  // Sincronizar pageIndex com currentPage vindo do pai
   useEffect(() => {
-    console.log("DataTable mounted or updated");
-  }, []);
+    setPageIndex(currentPage);
+  }, [currentPage]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedColumns = useMemo<ColumnDef<TData, any>[]>(() => {
     return columns.map((col) => {
@@ -154,7 +155,7 @@ export default function DataTable<TData>({
     onFilterChange?.({
       search: value,
       filterDate: selectedDate?.toISOString(),
-      page: 0,
+      page: 1, // API espera páginas baseadas em 1
     });
   }, 1000);
 
@@ -173,7 +174,7 @@ export default function DataTable<TData>({
       onFilterChange?.({
         search: searchValue,
         filterDate: date?.toISOString(),
-        page: 0,
+        page: 1, // API espera páginas baseadas em 1
       });
       setPageIndex(0);
     },
@@ -188,7 +189,7 @@ export default function DataTable<TData>({
       onFilterChange?.({
         search: searchValue,
         filterDate: selectedDate?.toISOString(),
-        page: newPage,
+        page: newPage + 1, // API espera páginas baseadas em 1, não em 0
         order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
         sort: sortOrder ?? undefined,
       });
@@ -207,7 +208,7 @@ export default function DataTable<TData>({
     onFilterChange?.({
       search: searchValue,
       filterDate: selectedDate?.toISOString(),
-      page: 0,
+      page: 1, // API espera páginas baseadas em 1
       order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
 
       sort: newOrder ?? undefined,

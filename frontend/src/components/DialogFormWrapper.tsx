@@ -48,7 +48,7 @@ export default function DialogFormWrapper({
 
           <DialogFooter>
             <Button
-              className="w-full my-4 py-5 text-3xl md:text-base"
+              className="w-full my-4 py-5 md:text-base"
               type="submit"
               disabled={isSubmitting}
             >

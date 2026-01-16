@@ -47,7 +47,7 @@ export default class UserController {
       logController.create({
         description: `Login`,
         module: LogsModuleEnum.MY_ACCOUNT,
-        user_id: Number(req.userId),
+        user_id: user.dataValues.id,
       });
 
       const token = generateToken({

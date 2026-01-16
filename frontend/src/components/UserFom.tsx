@@ -1,5 +1,5 @@
 import { useUser } from "@/contexts/userContext";
-import { UserFormData, userSchema } from "@/schemas/user.schema";
+import { userRegisterSchema, userEditSchema } from "@/schemas/user.schema";
 import api from "@/services/api";
 import { ViaCEPResponse } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,20 @@ import { apiError } from "@/utils/apiError";
 
 interface UserFormProps {
   type: "register" | "edit";
+}
+
+interface UserFormData {
+  name: string;
+  last_name: string;
+  email: string;
+  password?: string;
+  zip_code: string;
+  address: string;
+  number: string;
+  supplement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
 }
 
 export default function UserForm({ type }: UserFormProps) {
@@ -29,9 +43,11 @@ export default function UserForm({ type }: UserFormProps) {
     watch,
     setValue,
     trigger,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid, isDirty },
   } = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(
+      type === "edit" ? userEditSchema : userRegisterSchema
+    ),
     mode: "onChange",
     defaultValues: {
       name: "",
@@ -69,13 +85,14 @@ export default function UserForm({ type }: UserFormProps) {
       );
 
       if (data.data.erro) {
-        setZipCodeError("ZipCode não encontrado");
+        setZipCodeError("CEP não encontrado");
         return null;
       }
 
       return data;
     } catch (error) {
-      apiError(error, "Erro ao buscar endereço pelo ZipCode.");
+      console.log("Erro ao buscar endereço pelo CEP:", error);
+      toast.error("Erro ao buscar endereço pelo CEP.");
     } finally {
       setIsLoadingZipCode(false);
     }
@@ -103,8 +120,8 @@ export default function UserForm({ type }: UserFormProps) {
           // Valida os campos preenchidos
           await trigger(["address", "neighborhood", "city", "state"]);
         } else {
-          // Se não encontrou o ZipCode, ainda mostra os campos para preenchimento manual
-          setShowAddressFields(true);
+          // Se não encontrou o ZipCode, NÃO mostra os campos
+          setShowAddressFields(false);
         }
       } else if (zipCodeNumeric && zipCodeNumeric.length < 8) {
         setShowAddressFields(false);
@@ -149,6 +166,8 @@ export default function UserForm({ type }: UserFormProps) {
 
   const onSubmit = async (data: UserFormData) => {
     try {
+      console.log("Enviando dados do usuário:", data);
+
       if (type === "edit") {
         await api.put(`/user/${user?.id}`, data);
         toast.success("Dados atualizados com sucesso!");
@@ -293,7 +312,7 @@ export default function UserForm({ type }: UserFormProps) {
               )}
             </div>
 
-            {showAddressFields && (
+            {showAddressFields && !ZipCodeError && (
               <div className="animate-fadeIn space-y-4 sm:space-y-6">
                 <Input
                   type="text"
@@ -360,7 +379,13 @@ export default function UserForm({ type }: UserFormProps) {
             <div className="pt-4 sm:pt-6">
               <button
                 type="submit"
-                disabled={isSubmitting || !showAddressFields}
+                disabled={
+                  isSubmitting ||
+                  !isValid ||
+                  !!ZipCodeError ||
+                  (type === "register" && !showAddressFields) ||
+                  (type === "edit" && !isDirty)
+                }
                 className={`
                   w-full flex justify-center items-center
                   py-2 sm:py-3 lg:py-4 
@@ -371,7 +396,11 @@ export default function UserForm({ type }: UserFormProps) {
                   font-medium text-white 
                   transition duration-200
                   ${
-                    isSubmitting || !showAddressFields
+                    isSubmitting ||
+                    !isValid ||
+                    !!ZipCodeError ||
+                    (type === "register" && !showAddressFields) ||
+                    (type === "edit" && !isDirty)
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-black hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   }

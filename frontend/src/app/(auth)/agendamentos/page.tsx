@@ -28,7 +28,6 @@ import {
 } from "@/schemas/appointment.schema";
 
 import Input from "@/components/Input";
-// import { Input } from "@/components/ui/input";
 import { Label } from "@radix-ui/react-label";
 import {
   Select,
@@ -55,6 +54,7 @@ import {
 } from "@/components/ui/popover";
 import { apiError } from "@/utils/apiError";
 import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
+import { convertMinutesInHours } from "@/utils/convertMinutesInHours";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -65,7 +65,7 @@ const Agendamentos = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
-    page: 0,
+    page: 1,
     totalPages: 1,
   });
   const [filters, setFilters] = useState({
@@ -78,7 +78,6 @@ const Agendamentos = () => {
   const [timeRange, setTimeRange] = useState({ start_time: "", end_time: "" });
   const [timeBlocks, setTimeBlocks] = useState<TimeBlocks[]>([]);
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<string[]>([]);
-  //const [selectedStatus, setSelectedStatus] = useState("");
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
   const { user } = useUser();
@@ -151,7 +150,6 @@ const Agendamentos = () => {
       if (newFilters?.order) params.append("order", newFilters.order);
       if (newFilters?.sort) params.append("sort", newFilters.sort);
       params.append("page", String(newFilters?.page ?? 1));
-      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Appointment>>(
         `/appointments?${params.toString()}`
@@ -180,7 +178,6 @@ const Agendamentos = () => {
       if (newFilters?.order) params.append("order", newFilters.order);
       if (newFilters?.sort) params.append("sort", newFilters.sort);
       params.append("page", String(newFilters?.page ?? 1));
-      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Log>>(
         `/logs?${params.toString()}`
@@ -286,7 +283,6 @@ const Agendamentos = () => {
       if (newFilters?.order) params.append("order", newFilters.order);
       if (newFilters?.sort) params.append("sort", newFilters.sort);
       params.append("page", String(newFilters?.page ?? 1));
-      // params.append("limit", "10");
 
       const response = await api.get<ApiResponse<Client>>(
         `/users/clients?${params.toString()}`
@@ -319,8 +315,6 @@ const Agendamentos = () => {
 
   // Editar sala/agendamento
   const onSubmitEdit = async (data: RoomFormData) => {
-    //if (!selectedAppointment) return;
-
     try {
       // selectedTimeBlocks já contém os IDs corretos dos time_blocks
       const newRoom = await api.post(`/room`, {
@@ -620,7 +614,7 @@ const Agendamentos = () => {
                                       }
                                     />
                                     <span className="flex-1 text-sm">
-                                      {timeblock.minutes} minutos
+                                      {convertMinutesInHours(timeblock.minutes)}
                                     </span>
                                   </div>
                                 ))
