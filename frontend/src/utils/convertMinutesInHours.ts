@@ -6,7 +6,7 @@ export function convertMinutesInHours(minutes: number): string {
 
   if (hours === 0) return `00:${remainingMinutes}`;
 
-  if (remainingMinutes === 0) return `${hours}:00`;
+  if (remainingMinutes === 0) return `0${hours}:00`;
 
-  return `${hours}:${remainingMinutes}`;
+  return `0${hours}:${remainingMinutes}`;
 }

@@ -62,12 +62,12 @@ export default function DataTable<TData>({
   onRowSelect,
   placeholderInput,
 }: DataTableProps<TData>) {
+  const { order, setOrder } = useOrder();
+
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [pageIndex, setPageIndex] = useState(currentPage);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
-
-  const { setOrder, order } = useOrder();
 
   // Sincronizar pageIndex com currentPage vindo do pai
   useEffect(() => {
@@ -154,9 +154,6 @@ export default function DataTable<TData>({
   });
 
   const debouncedFilter = useDebouncedCallback((value: string) => {
-    // const orderableColumn = columns.find(
-    //   (col) => col.isOrderable && order?.sort
-    // );
     onFilterChange?.({
       search: value,
       filterDate: selectedDate?.toISOString(),
@@ -177,24 +174,23 @@ export default function DataTable<TData>({
 
   const handleDateChange = useCallback(
     (date: Date | undefined) => {
-      const orderableColumn = columns.find(
-        (col) => col.isOrderable && order?.sort
-      );
       setSelectedDate(date);
       onFilterChange?.({
         search: searchValue,
         filterDate: date?.toISOString(),
         page: 1, // API espera páginas baseadas em 1
-        order: order?.order ? orderableColumn?.accessorKey : undefined,
+        order: order?.order ?? undefined,
         sort: order?.sort ?? undefined,
       });
       setPageIndex(0);
     },
-    [searchValue, onFilterChange, order?.sort, columns, order?.order]
+    [searchValue, onFilterChange, order]
   );
 
   const handlePageChange = useCallback(
     (newPage: number) => {
+      // const ordeblaColumn = columns.find((col) => col.isOrderable && sortOrder);
+
       setPageIndex(newPage);
       onFilterChange?.({
         search: searchValue,
@@ -204,7 +200,7 @@ export default function DataTable<TData>({
         sort: order?.sort ?? undefined,
       });
     },
-    [searchValue, selectedDate, onFilterChange, order?.order, order?.sort]
+    [searchValue, selectedDate, onFilterChange, order]
   );
 
   const handleSortChange = useCallback(() => {
@@ -219,7 +215,7 @@ export default function DataTable<TData>({
     const newOrderKey = newOrder ? orderableColumn?.accessorKey ?? null : null;
 
     setOrder({
-      order: newOrderKey,
+      order: newOrderKey ?? undefined,
       sort: newOrder ?? undefined,
     });
 

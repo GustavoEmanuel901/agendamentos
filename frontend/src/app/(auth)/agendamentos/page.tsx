@@ -66,7 +66,7 @@ const Agendamentos = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
-    page: 1,
+    page: 0,
     totalPages: 1,
   });
   const [filters, setFilters] = useState<DataTableFilters | undefined>(
@@ -81,7 +81,7 @@ const Agendamentos = () => {
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
   const { user } = useUser();
-  const { order, clearOrder } = useOrder();
+  const { order } = useOrder();
   const router = useRouter();
 
   const columnsAppointment = useMemo(
@@ -311,7 +311,13 @@ const Agendamentos = () => {
       await api.post("/appointments", data);
 
       reset();
-      fetchAppointments();
+      fetchAppointments({
+        ...filters,
+        page: pagination.page + 1,
+        order: order?.order ?? undefined,
+        sort: order?.sort ?? undefined,
+      });
+
       toast.success("Agendamento criado com sucesso!");
     } catch (error) {
       apiError(error, "Erro ao criar agendamento");
@@ -340,7 +346,14 @@ const Agendamentos = () => {
       setRoomSearchEdit("");
       setTimeRange({ start_time: "", end_time: "" });
       setSelectedTimeBlocks([]);
-      fetchAppointments();
+
+
+      fetchAppointments({
+        ...filters,
+        page: pagination.page + 1,
+        order: order?.order ?? undefined,
+        sort: order?.sort ?? undefined,
+      });
 
       toast.success("Sala registrada!!");
     } catch (error) {

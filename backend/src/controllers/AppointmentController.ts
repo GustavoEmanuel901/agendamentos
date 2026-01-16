@@ -130,7 +130,7 @@ export default class AppointmentControler {
         include,
         limit: perPageNum,
         offset,
-        order: [[order || "date_appointment", sort || "DESC"]],
+        order: [[order || "created_at", sort || "DESC"]],
         distinct: true,
       });
 

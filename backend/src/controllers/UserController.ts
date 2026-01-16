@@ -168,7 +168,7 @@ export default class UserController {
         where,
         limit: perPageNum,
         offset,
-        order: [[order || "created_at", sort || "DESC"]],
+        order: [[order || "name", sort || "ASC"]],
       });
 
       const clients = rows.map((user) => ({

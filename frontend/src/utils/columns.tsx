@@ -65,13 +65,13 @@ export const getAppointmentColumns = (
     type: "action",
 
     cell: ({ row }) => {
-      const style =
-        row.original.status === AppointmentStatus.SCHEDULED && isAdmin
-          ? "items-center justify-center"
-          : "";
+      // const style =
+      //   row.original.status === AppointmentStatus.SCHEDULED && isAdmin
+      //     ? ""
+      //     : "";
 
       return (
-        <div className={`flex gap-2 ${style}`}>
+        <div className={`flex gap-2 `}>
           {row.original.status !== AppointmentStatus.CANCELED && (
             <>
               <Button
@@ -252,6 +252,7 @@ export const getClientColumns = (
               toast.success("Status atualizado com sucesso!");
               onPermissionToggle?.();
             } catch (error) {
+              console.log(error);
               apiError("Erro ao atualizar status");
             }
           }}
