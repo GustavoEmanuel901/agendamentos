@@ -19,7 +19,10 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const [order, setOrder] = useState<Order | null>(null);
 
   function clearOrder() {
-    setOrder(null);
+    setOrder({
+      order: undefined,
+      sort: undefined,
+    });
   }
 
   return (

@@ -81,7 +81,7 @@ const Agendamentos = () => {
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
   const { user } = useUser();
-  const { order } = useOrder();
+  const { order, clearOrder } = useOrder();
   const router = useRouter();
 
   const columnsAppointment = useMemo(
@@ -423,7 +423,6 @@ const Agendamentos = () => {
 
   useEffect(() => {
     // Carregar dados ao mudar de aba
-    // clearOrder();
 
     if (selectedItem === "Agendamentos") {
       fetchAppointments();
@@ -433,6 +432,11 @@ const Agendamentos = () => {
     } else if (selectedItem === "Logs") fetchLogs();
     else if (selectedItem === "Clientes" && user?.is_admin) fetchClients();
   }, [user, router, selectedItem]);
+
+  useEffect(() => {
+    clearOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItem]);
 
   if (!user) return null;
 
