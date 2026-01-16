@@ -55,6 +55,7 @@ import {
 import { apiError } from "@/utils/apiError";
 import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
 import { convertMinutesInHours } from "@/utils/convertMinutesInHours";
+import { useOrder } from "@/contexts/orderContext";
 
 const Agendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -68,10 +69,9 @@ const Agendamentos = () => {
     page: 1,
     totalPages: 1,
   });
-  const [filters, setFilters] = useState({
-    search: "",
-    filterDate: "",
-  });
+  const [filters, setFilters] = useState<DataTableFilters | undefined>(
+    undefined
+  );
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [roomSearchEdit, setRoomSearchEdit] = useState("");
@@ -81,6 +81,7 @@ const Agendamentos = () => {
   const [loadingTimeBlocks, setLoadingTimeBlocks] = useState(false);
 
   const { user } = useUser();
+  const { order, clearOrder } = useOrder();
   const router = useRouter();
 
   const columnsAppointment = useMemo(
@@ -88,25 +89,29 @@ const Agendamentos = () => {
       getAppointmentColumns(
         () =>
           fetchAppointments({
-            search: filters.search,
-            filterDate: filters.filterDate,
+            search: filters?.search,
+            filterDate: filters?.filterDate,
             page: pagination.page + 1,
+            order: order?.order ?? undefined,
+            sort: order?.sort ?? undefined,
           }),
         user?.is_admin
       ),
-    [filters, pagination.page, user?.is_admin]
+    [filters, pagination.page, user?.is_admin, order]
   );
 
   const columnsClients = useMemo(
     () =>
       getClientColumns(() =>
         fetchClients({
-          search: filters.search,
-          filterDate: filters.filterDate,
+          search: filters?.search,
+          filterDate: filters?.filterDate,
           page: pagination.page + 1,
+          order: order?.order ?? undefined,
+          sort: order?.sort ?? undefined,
         })
       ),
-    [filters, pagination.page]
+    [filters, pagination.page, order]
   );
 
   const {
@@ -406,6 +411,8 @@ const Agendamentos = () => {
 
   useEffect(() => {
     // Carregar dados ao mudar de aba
+    // clearOrder();
+
     if (selectedItem === "Agendamentos") {
       fetchAppointments();
       fetchRooms();
@@ -447,6 +454,8 @@ const Agendamentos = () => {
                 setFilters({
                   search: newFilters.search ?? "",
                   filterDate: newFilters.filterDate ?? "",
+                  order: order?.order ?? undefined,
+                  sort: order?.sort ?? undefined,
                 });
                 fetchAppointments(newFilters);
               }}
@@ -749,6 +758,8 @@ const Agendamentos = () => {
                 setFilters({
                   search: newFilters.search ?? "",
                   filterDate: newFilters.filterDate ?? "",
+                  order: order?.order ?? undefined,
+                  sort: order?.sort ?? undefined,
                 });
 
                 fetchClients(newFilters);
@@ -775,6 +786,8 @@ const Agendamentos = () => {
                 setFilters({
                   search: newFilters.search ?? "",
                   filterDate: newFilters.filterDate ?? "",
+                  order: order?.order ?? undefined,
+                  sort: order?.sort ?? undefined,
                 });
 
                 fetchLogs(newFilters);

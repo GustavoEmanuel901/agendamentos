@@ -35,6 +35,7 @@ import type {
   DataTableFilters,
 } from "@/types/types";
 import { useDebouncedCallback } from "use-debounce";
+import { useOrder } from "@/contexts/orderContext";
 
 export interface DataTableProps<TData> {
   columns: Columns<TData>[];
@@ -64,8 +65,9 @@ export default function DataTable<TData>({
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [pageIndex, setPageIndex] = useState(currentPage);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  const { setOrder, order } = useOrder();
 
   // Sincronizar pageIndex com currentPage vindo do pai
   useEffect(() => {
@@ -152,10 +154,15 @@ export default function DataTable<TData>({
   });
 
   const debouncedFilter = useDebouncedCallback((value: string) => {
+    // const orderableColumn = columns.find(
+    //   (col) => col.isOrderable && order?.sort
+    // );
     onFilterChange?.({
       search: value,
       filterDate: selectedDate?.toISOString(),
       page: 1, // API espera páginas baseadas em 1
+      order: order?.order ?? undefined,
+      sort: order?.sort ?? undefined,
     });
   }, 1000);
 
@@ -170,50 +177,68 @@ export default function DataTable<TData>({
 
   const handleDateChange = useCallback(
     (date: Date | undefined) => {
+      const orderableColumn = columns.find(
+        (col) => col.isOrderable && order?.sort
+      );
       setSelectedDate(date);
       onFilterChange?.({
         search: searchValue,
         filterDate: date?.toISOString(),
         page: 1, // API espera páginas baseadas em 1
+        order: order?.order ? orderableColumn?.accessorKey : undefined,
+        sort: order?.sort ?? undefined,
       });
       setPageIndex(0);
     },
-    [searchValue, onFilterChange]
+    [searchValue, onFilterChange, order?.sort, columns, order?.order]
   );
 
   const handlePageChange = useCallback(
     (newPage: number) => {
-      const ordeblaColumn = columns.find((col) => col.isOrderable && sortOrder);
-
       setPageIndex(newPage);
       onFilterChange?.({
         search: searchValue,
         filterDate: selectedDate?.toISOString(),
         page: newPage + 1, // API espera páginas baseadas em 1, não em 0
-        order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
-        sort: sortOrder ?? undefined,
+        order: order?.order ?? undefined,
+        sort: order?.sort ?? undefined,
       });
     },
-    [searchValue, selectedDate, sortOrder, onFilterChange, columns]
+    [searchValue, selectedDate, onFilterChange, order?.order, order?.sort]
   );
 
   const handleSortChange = useCallback(() => {
     const newOrder =
-      sortOrder === "asc" ? "desc" : sortOrder === "desc" ? null : "asc";
+      order?.sort === "asc"
+        ? "desc"
+        : order?.sort === "desc"
+        ? undefined
+        : "asc";
 
-    const ordeblaColumn = columns.find((col) => col.isOrderable && sortOrder);
+    const orderableColumn = columns.find((col) => col.isOrderable);
+    const newOrderKey = newOrder ? orderableColumn?.accessorKey ?? null : null;
 
-    setSortOrder(newOrder);
+    setOrder({
+      order: newOrderKey,
+      sort: newOrder ?? undefined,
+    });
+
     setPageIndex(0);
     onFilterChange?.({
       search: searchValue,
       filterDate: selectedDate?.toISOString(),
       page: 1, // API espera páginas baseadas em 1
-      order: sortOrder ? ordeblaColumn?.accessorKey : undefined,
-
+      order: newOrderKey ?? undefined,
       sort: newOrder ?? undefined,
     });
-  }, [sortOrder, searchValue, selectedDate, onFilterChange, columns]);
+  }, [
+    order?.sort,
+    searchValue,
+    selectedDate,
+    onFilterChange,
+    columns,
+    setOrder,
+  ]);
 
   return (
     <>
@@ -285,9 +310,9 @@ export default function DataTable<TData>({
                                   header.column.columnDef.header,
                                   header.getContext()
                                 )}
-                                {sortOrder && (
+                                {order?.sort && (
                                   <span className="text-xs">
-                                    {sortOrder === "asc" ? "↑" : "↓"}
+                                    {order.sort === "asc" ? "↑" : "↓"}
                                   </span>
                                 )}
                               </button>

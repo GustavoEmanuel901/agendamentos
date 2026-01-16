@@ -1,7 +1,6 @@
 import { AppointmentStatus } from "@/utils/appointmentStatusEnum";
 import { ColumnDef } from "@tanstack/react-table";
 
-
 // components/DataTable/types.ts
 export type Appointment = {
   id: string;
@@ -82,7 +81,7 @@ export interface DataTableFilters {
   search?: string;
   filterDate?: string;
   page?: number;
-  order?: string;
+  order?: string | undefined;
   sort?: "asc" | "desc";
 }
 
