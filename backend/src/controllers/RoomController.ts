@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import Room from "../models/Room";
-import LogController from "./LogController";
 import z from "zod";
 import RoomTimeBlocksController from "./RoomTimeBlocksController";
 import ResponseMessages from "../utils/responseMessages";
@@ -17,6 +16,7 @@ export default class RoomController {
       const where: any = {};
 
       if (search) where.name = { [Op.like]: `%${search}%` };
+
       const rooms = await Room.findAll({
         where,
         attributes: ["id", "name"],
@@ -97,7 +97,6 @@ export default class RoomController {
       }
 
       const roomUpdated = await roomWithSameName.update(payload);
-
 
       if (payload.time_blocks) {
         await roomTimeBlocksController.deleteByRoom(roomUpdated.dataValues.id);

@@ -6,10 +6,7 @@ import { Op } from "sequelize";
 import { GetFilteres } from "../@types/filter";
 import LogController from "./LogController";
 import Room from "../models/Room";
-import {
-  appointmentStatus,
-  AppointmentStatusEnum,
-} from "../utils/appointmentStatus";
+import { AppointmentStatusEnum } from "../utils/appointmentStatus";
 import ResponseMessages from "../utils/responseMessages";
 import {
   appointmentCreateSchema,
