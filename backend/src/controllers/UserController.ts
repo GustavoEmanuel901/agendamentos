@@ -3,7 +3,7 @@ import User from "../models/User";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import LogController from "./LogController";
 import generateToken from "../utils/generateToken";
 import {
@@ -137,8 +137,6 @@ export default class UserController {
         sort,
       } = req.query as Partial<GetFilteres>;
 
-      console.log(req.query);
-
       const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const perPageNum = Math.max(1, parseInt(limit, 10) || 10);
       const offset = (pageNum - 1) * perPageNum;
@@ -150,6 +148,15 @@ export default class UserController {
         where[Op.or] = [
           { name: { [Op.like]: like } },
           { last_name: { [Op.like]: like } },
+          Sequelize.where(
+            Sequelize.fn(
+              "CONCAT",
+              Sequelize.col("name"),
+              " ",
+              Sequelize.col("last_name"),
+            ),
+            { [Op.like]: like },
+          ),
         ];
       }
 

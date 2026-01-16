@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import z from "zod";
 import Appointment from "../models/Appointment";
 import User from "../models/User";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { GetFilteres } from "../@types/filter";
 import LogController from "./LogController";
 import Room from "../models/Room";
@@ -108,6 +108,15 @@ export default class AppointmentControler {
             [Op.or]: [
               { name: { [Op.like]: like } },
               { last_name: { [Op.like]: like } },
+              Sequelize.where(
+                Sequelize.fn(
+                  "CONCAT",
+                  Sequelize.col("name"),
+                  " ",
+                  Sequelize.col("last_name"),
+                ),
+                { [Op.like]: like },
+              ),
             ],
           },
         });
@@ -193,7 +202,7 @@ export default class AppointmentControler {
       // SOMENTE ADM PODEM CONFIRMAR AGENDAMENTOS
       if (payload.status == AppointmentStatusEnum.SCHEDULED && !req.isAdmin) {
         console.log(
-          "Acesso negado: somente admins podem confirmar agendamentos"
+          "Acesso negado: somente admins podem confirmar agendamentos",
         );
 
         return res

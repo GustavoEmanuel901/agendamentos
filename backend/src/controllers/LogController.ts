@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import Log from "../models/Log";
 import { GetFilteres } from "../@types/filter";
 import User from "../models/User";
@@ -43,6 +43,15 @@ export default class LogController {
           { module: { [Op.like]: like } },
           { "$user.name$": { [Op.like]: like } },
           { "$user.last_name$": { [Op.like]: like } },
+          Sequelize.where(
+            Sequelize.fn(
+              "CONCAT",
+              Sequelize.col("user.name"),
+              " ",
+              Sequelize.col("user.last_name"),
+            ),
+            { [Op.like]: like },
+          ),
         ];
       }
 
@@ -93,6 +102,7 @@ export default class LogController {
         },
       });
     } catch (error) {
+      console.error(error);
       return res
         .status(500)
         .json({ message: ResponseMessages.INTERNAL_SERVER_ERROR });
@@ -110,7 +120,7 @@ export default class LogController {
       console.log(
         `[${new Date().toISOString()}] Log: ${data.description} no ${
           data.module
-        }`
+        }`,
       );
     } catch (error: any) {
       console.error("Erro ao criar log:", error);

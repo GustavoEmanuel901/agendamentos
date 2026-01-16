@@ -36,10 +36,6 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     req.isAdmin = decoded.isAdmin;
     req.permissions = decoded.permissions;
 
-    console.log(decoded);
-
-    console.log(req.permissions);
-
     return next();
   } catch (err) {
     return messageReturned(res);
